@@ -141,11 +141,25 @@ pytest -q
 
 ## Acknowledgements & attribution
 
-- Originated as a **UTS Image Processing & Pattern Recognition** group project.
-  _TODO: add course code, semester, and teammate credits / contribution note._
-- Built on public datasets — see [`DATASET.md`](DATASET.md). Images are **not**
-  redistributed here; download scripts fetch them locally.
-- DeepSolarEye: Mehta et al., *WACV 2018* (see `DATASET.md` for the citation).
+This work originated as **Team 7's** project for UTS *Image Processing and Pattern
+Recognition* (Assignment 2, 2025). Team members: Jiaao Su, Timothy Chan, Md Fardin
+Hossain, Zhengda Peng, Senyu Zhu, Anik Chandra Sarkar.
+
+This published repository builds on and extends **Senyu Zhu's** contributions to
+that project — the dataset retrieval / de-duplication / curation pipeline and the
+ResNet-50 transfer-learning classifier. Other components of the original group
+submission (additional CNN/VGG16/InceptionV3 benchmarking and U-Net segmentation
+experiments) were led by other team members and are **not** included here. The
+multi-class, classical-baseline, severity, Grad-CAM and demo work is new.
+
+Notably, the original report's stated future work — *"localize soiling, quantify
+the dirty-area ratio, and trigger cleaning decisions based on thresholds rather
+than coarse binary labels"* — directly motivates the severity/coverage extension.
+
+- Data sources, licences and citations: [`DATASET.md`](DATASET.md). Images are
+  **not** redistributed here; download scripts fetch them locally.
+- DeepSolarEye: Mehta et al., *WACV 2018*; SolNet: Onim et al., *Energies* 2023
+  (see `DATASET.md`).
 
 ## License
 

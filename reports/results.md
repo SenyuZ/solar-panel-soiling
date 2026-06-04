@@ -1,16 +1,18 @@
 # Results
 
-Reproduce everything with the commands in each section. Binary numbers below are
-from an actual run on this machine (Apple-Silicon MPS, fp32); the original Colab
-figures (A100, AMP) are included for comparison. Extension rows need their
-datasets — see `DATASET.md`.
+Reproduce everything with the commands in each section. The modular binary numbers
+below are from an actual run on this machine (Apple-Silicon MPS, fp32) over the
+**Dust Detection** set in `Data/`. The original Colab figures (A100) are shown for
+context but were measured on the project's **merged 3-dataset** curation (≈3,539
+images, different test split), so the two CNN rows are *not* directly comparable —
+see the note under the table. Extension rows need their datasets — see `DATASET.md`.
 
 ## Binary: clean vs dirty (test set, n = 385)
 
 | Model | Accuracy | Precision | Recall | F1 | MCC |
 |---|---|---|---|---|---|
-| ResNet-50 (original Colab run, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
-| **ResNet-50 (modular re-run, MPS)** | **0.842** | 0.809 | 0.814 | **0.811** | 0.675 |
+| ResNet-50 (original Colab, *merged 3-dataset* test, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
+| **ResNet-50 (modular re-run, *Dust Detection* set, MPS)** | **0.842** | 0.809 | 0.814 | **0.811** | 0.675 |
 | Classical SVM (HSV + GLCM/LBP + edges) | 0.758 | 0.710 | 0.714 | 0.712 | 0.504 |
 | Classical Random Forest | 0.738 | 0.708 | 0.634 | 0.669 | 0.455 |
 
@@ -18,13 +20,15 @@ Per-class (modular ResNet-50): clean P/R/F1 = 0.865 / 0.862 / 0.864 · dirty =
 0.809 / 0.814 / 0.811. Training early-stopped at epoch 14; best validation F1
 0.865 at epoch 9.
 
-**Reading the table.** The modular re-run lands a few points below the original
-Colab run — expected, given a different stratified split + seed, fp32 on MPS (no
-AMP), and the original's extra source-specific class weighting. The headline is
-the **deep-vs-classical gap**: ResNet-50's 0.811 F1 vs the best classical 0.712
-(SVM) — learned features add ~10 F1 points over hand-crafted colour/texture/edge
-descriptors. On this data the main *classical* separable cue is saturation (dust
-greys panels out); see the discussion in `solarsoil/severity.py`.
+**Reading the table.** The two CNN rows are on *different test sets* — the original
+Colab run used the merged 3-dataset curation (which included the high-quality
+SolNet images), while the modular re-run uses the single Dust Detection set in
+`Data/` — so the 0.881 → 0.811 F1 difference is mostly a different/harder test set
+(plus fp32 on MPS vs AMP), not a regression. The directly comparable result is the
+**deep-vs-classical gap** on the *same* `Data/` split: ResNet-50's 0.811 F1 vs the
+best classical 0.712 (SVM) — learned features add ~10 F1 points over hand-crafted
+colour/texture/edge descriptors. On this data the main *classical* separable cue
+is saturation (dust greys panels out); see `solarsoil/severity.py`.
 
 ![Confusion matrix](figures/binary_confusion_test.png)
 
