@@ -1,0 +1,29 @@
+# Soiling severity / coverage quantification (Phase 4).
+
+# --- Track A: classical, unsupervised, no training. Runs now. ---
+#   python -m solarsoil.severity --image Data/Dusty --out-dir reports/figures/coverage
+track_a:
+  size: 512
+  threshold: 0.55                  # soiling-score threshold in [0,1]; higher = stricter
+  method: fixed                    # fixed | otsu (per-image adaptive)
+
+# --- Track B: data-driven regression on measured % power loss. ---
+# Requires the DeepSolarEye dataset (45k images, power-loss labels):
+#   python -m solarsoil.data.download --source deepsolareye
+# Build an (image -> power_loss) regression manifest, then train a 1-output
+# CNN head with MSE. See solarsoil.severity.train_power_loss_regressor.
+track_b:
+  data_root: Data/raw/deepsolareye
+  manifest: manifests/deepsolareye_manifest.csv
+  target: power_loss               # continuous target column (0-1 or %)
+  backbone: resnet50
+  img_size: 224
+  batch_size: 64
+  epochs: 25
+  unfreeze_after: 5
+  lr_head: 1.0e-4
+  lr_finetune: 5.0e-5
+  loss: mse
+  seed: 123
+  device: auto
+  out_dir: artifacts/severity

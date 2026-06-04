@@ -1,0 +1,33 @@
+# Core scientific stack
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+
+# Imaging / classical image processing
+pillow>=10.0
+imagehash>=4.3
+opencv-python>=4.8
+scikit-image>=0.22
+
+# Machine learning / deep learning
+scikit-learn>=1.3
+torch>=2.2
+torchvision>=0.17
+
+# Visualisation
+matplotlib>=3.8
+seaborn>=0.13
+
+# Config / utilities
+pyyaml>=6.0
+tqdm>=4.66
+
+# Dataset download helpers (Kaggle sources + DeepSolarEye)
+kagglehub>=0.3
+gdown>=5.1
+
+# Interactive demo
+gradio>=4.0
+
+# Tests
+pytest>=7.4

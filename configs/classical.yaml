@@ -1,0 +1,7 @@
+# Classical image-processing baseline (hand-crafted features + SVM/RF).
+task: binary                       # binary | condition | multiclass
+manifest: manifests/binary_manifest.csv
+model_type: svm                    # svm | rf
+feature_size: 256                  # images resized to this square before feature extraction
+seed: 123
+out_dir: artifacts/classical

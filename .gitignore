@@ -1,0 +1,35 @@
+# --- Image data: never commit. Use the download scripts + committed manifests. ---
+/Data/
+/data/raw/
+
+# --- Trained weights, checkpoints, run artifacts ---
+/artifacts/
+/checkpoints/
+*.pth
+*.pt
+*.onnx
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Tooling caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+
+# Keep committed: manifests/ (metadata only), reports/ (figures + results), DATASET.md

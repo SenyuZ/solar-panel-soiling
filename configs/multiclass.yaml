@@ -1,0 +1,30 @@
+# Multi-class soiling/fault classification — 6 canonical classes.
+# Needs the 6-class source dataset:
+#   python -m solarsoil.data.download --source faulty
+#   python -m solarsoil.data.manifest --data-root Data/raw/faulty \
+#       --out manifests/multiclass_manifest.csv --label-space multiclass
+task: multiclass
+data_root: Data/raw/faulty         # folder with the 6 class subdirectories
+manifest: manifests/multiclass_manifest.csv
+
+img_size: 224
+batch_size: 32
+num_workers: 4
+augment: true
+
+backbone: resnet50
+pretrained: true
+
+epochs: 30
+unfreeze_after: 5
+lr_head: 1.0e-4
+lr_finetune: 5.0e-5
+weight_decay: 1.0e-4
+step_size: 10
+gamma: 0.1
+use_class_weights: true            # essential: bird-drop / damage classes are rare
+patience: 7
+
+seed: 123
+device: auto
+out_dir: artifacts/multiclass
