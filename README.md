@@ -34,6 +34,17 @@ Engineering: config-driven CLIs, fixed seeds, a non-destructive stratified
 manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
 (JSON+CSV), and unit tests.
 
+## Examples
+
+Binary test set (modular ResNet-50): **84.2% accuracy, 0.811 F1, 0.675 MCC** —
+about 10 F1 points above the best classical baseline (SVM, 0.712 F1). Full tables
+and the deep-vs-classical discussion are in
+[`reports/results.md`](reports/results.md).
+
+| Grad-CAM (where the model sees "dirty") | Soiling overlay (classical, Track A) |
+|---|---|
+| ![Grad-CAM](reports/figures/gradcam/Imgdirty_1000_1_gradcam.png) | ![Soiling](reports/figures/coverage/Imgdirty_0_1_soiling.png) |
+
 ## Repository layout
 
 ```

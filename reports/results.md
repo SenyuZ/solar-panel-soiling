@@ -1,30 +1,39 @@
 # Results
 
-Numbers below are reproduced by the commands in each section. The headline binary
-figures are from the **original Colab run** (an A100 GPU, full 20-epoch schedule);
-re-running `solarsoil.train` reproduces them up to split/seed differences. Rows
-marked _to fill_ are produced by running the corresponding command on your machine
-(some need the extension datasets — see `DATASET.md`).
+Reproduce everything with the commands in each section. Binary numbers below are
+from an actual run on this machine (Apple-Silicon MPS, fp32); the original Colab
+figures (A100, AMP) are included for comparison. Extension rows need their
+datasets — see `DATASET.md`.
 
-## Binary: clean vs dirty (test set)
+## Binary: clean vs dirty (test set, n = 385)
 
 | Model | Accuracy | Precision | Recall | F1 | MCC |
 |---|---|---|---|---|---|
-| ResNet-50 (original Colab run) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
-| ResNet-50 (modular re-run) | _to fill_ | | | | |
-| Classical SVM (HSV+GLCM+LBP+edges) | _to fill_ | | | | |
-| Classical Random Forest | _to fill_ | | | | |
+| ResNet-50 (original Colab run, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
+| **ResNet-50 (modular re-run, MPS)** | **0.842** | 0.809 | 0.814 | **0.811** | 0.675 |
+| Classical SVM (HSV + GLCM/LBP + edges) | 0.758 | 0.710 | 0.714 | 0.712 | 0.504 |
+| Classical Random Forest | 0.738 | 0.708 | 0.634 | 0.669 | 0.455 |
+
+Per-class (modular ResNet-50): clean P/R/F1 = 0.865 / 0.862 / 0.864 · dirty =
+0.809 / 0.814 / 0.811. Training early-stopped at epoch 14; best validation F1
+0.865 at epoch 9.
+
+**Reading the table.** The modular re-run lands a few points below the original
+Colab run — expected, given a different stratified split + seed, fp32 on MPS (no
+AMP), and the original's extra source-specific class weighting. The headline is
+the **deep-vs-classical gap**: ResNet-50's 0.811 F1 vs the best classical 0.712
+(SVM) — learned features add ~10 F1 points over hand-crafted colour/texture/edge
+descriptors. On this data the main *classical* separable cue is saturation (dust
+greys panels out); see the discussion in `solarsoil/severity.py`.
+
+![Confusion matrix](figures/binary_confusion_test.png)
 
 ```bash
-python -m solarsoil.train     --config configs/binary.yaml
-python -m solarsoil.evaluate   --model artifacts/binary/model.pth --manifest manifests/binary_manifest.csv --split test
-python -m solarsoil.models.classical --config configs/classical.yaml --model-type svm
-python -m solarsoil.models.classical --config configs/classical.yaml --model-type rf
+python -m solarsoil.train             --config configs/binary.yaml
+python -m solarsoil.evaluate          --model artifacts/binary/model.pth --manifest manifests/binary_manifest.csv --split test
+python -m solarsoil.models.classical  --config configs/classical.yaml --model-type svm
+python -m solarsoil.models.classical  --config configs/classical.yaml --model-type rf
 ```
-
-The classical-vs-deep gap is the point of Phase 2: hand-crafted colour/texture/edge
-features quantify how much signal is reachable without deep features (on this data,
-saturation is the main separable cue — see `solarsoil/severity.py`).
 
 ## Multi-class & condition (needs the 6-class source)
 
@@ -42,11 +51,15 @@ python -m solarsoil.evaluate   --model artifacts/multiclass/model.pth --manifest
 
 ## Severity / coverage (Phase 4)
 
-* **Track A (classical, runs now):** soiling index separates clean (≈0.10–0.32)
-  from dusty (≈0.21–0.47) on sampled panels; absolute coverage is approximate —
-  see the honest discussion in `solarsoil/severity.py`.
+* **Track A (classical, runs now):** the saturation-based soiling index orders
+  dusty above clean on average (sampled panels: clean ≈ 0.10–0.32, dusty ≈
+  0.21–0.47). Absolute coverage is approximate — clean and dusty overlap in
+  low-level cues, which is exactly why the CNN is worthwhile. Track A is best
+  used as a relative index + localisation aid (red overlay below).
 * **Track B (DeepSolarEye):** power-loss MAE — _to fill_ once the dataset is
   downloaded and a regression head is trained.
+
+![Soiling overlay](figures/coverage/Imgdirty_0_1_soiling.png)
 
 ```bash
 python -m solarsoil.severity --image Data/Dusty --limit 25 --out-dir reports/figures/coverage
