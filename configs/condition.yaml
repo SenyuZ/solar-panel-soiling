@@ -2,10 +2,10 @@
 # Same 6-class source as multiclass, projected to the condition taxonomy
 # (see src/solarsoil/taxonomy.py). This is the headline "soiling vs fault" framing.
 #   python -m solarsoil.data.download --source faulty
-#   python -m solarsoil.data.manifest --data-root Data/raw/faulty \
+#   python -m solarsoil.data.manifest --data-root Data/raw/faulty/Faulty_solar_panel \
 #       --out manifests/condition_manifest.csv --label-space condition
 task: condition
-data_root: Data/raw/faulty
+data_root: Data/raw/faulty/Faulty_solar_panel
 manifest: manifests/condition_manifest.csv
 
 img_size: 224

@@ -1,10 +1,10 @@
 # Multi-class soiling/fault classification — 6 canonical classes.
 # Needs the 6-class source dataset:
 #   python -m solarsoil.data.download --source faulty
-#   python -m solarsoil.data.manifest --data-root Data/raw/faulty \
+#   python -m solarsoil.data.manifest --data-root Data/raw/faulty/Faulty_solar_panel \
 #       --out manifests/multiclass_manifest.csv --label-space multiclass
 task: multiclass
-data_root: Data/raw/faulty         # folder with the 6 class subdirectories
+data_root: Data/raw/faulty/Faulty_solar_panel   # folder with the 6 class subdirectories
 manifest: manifests/multiclass_manifest.csv
 
 img_size: 224

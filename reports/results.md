@@ -39,16 +39,25 @@ python -m solarsoil.models.classical  --config configs/classical.yaml --model-ty
 python -m solarsoil.models.classical  --config configs/classical.yaml --model-type rf
 ```
 
-## Multi-class & condition (needs the 6-class source)
+## Multi-class & condition (pythonafroz 6-class set, n_test = 133)
 
-| Task | Backbone | Accuracy | Macro-F1 | Notes |
+| Task | Backbone | Accuracy | Macro-F1 | MCC |
 |---|---|---|---|---|
-| 6-class (multiclass) | ResNet-50 | _to fill_ | | per-class P/R/F1 in eval output |
-| 3-way (clean/soiled/damaged) | ResNet-50 | _to fill_ | | the soiling-vs-fault framing |
+| **6-class** (Clean/Dusty/Bird-drop/Snow/Physical/Electrical) | ResNet-50 | 0.842 | **0.857** | 0.809 |
+| **3-way condition** (clean / soiled / damaged) | ResNet-50 | 0.895 | **0.883** | 0.818 |
+
+Per-class F1 (6-class): Snow-Covered 0.95, Physical-Damage 0.90, Electrical-damage
+0.88, Bird-drop 0.86, Clean 0.79, Dusty 0.77 — despite heavy imbalance (only 48
+Physical-Damage training images), weighted cross-entropy keeps the rare *fault*
+classes strong (macro-F1 0.857). The 3-way condition model (the soiling-vs-fault
+framing) reaches macro-F1 0.883. Best val-F1: multiclass 0.908 @ epoch 23,
+condition 0.907 @ epoch 9.
+
+![6-class confusion matrix](figures/multiclass_confusion_test.png)
 
 ```bash
 python -m solarsoil.data.download --source faulty
-python -m solarsoil.data.manifest --data-root Data/raw/faulty --out manifests/multiclass_manifest.csv --label-space multiclass
+python -m solarsoil.data.manifest --data-root Data/raw/faulty/Faulty_solar_panel --out manifests/multiclass_manifest.csv --label-space multiclass
 python -m solarsoil.train     --config configs/multiclass.yaml
 python -m solarsoil.evaluate   --model artifacts/multiclass/model.pth --manifest manifests/multiclass_manifest.csv --split test
 ```

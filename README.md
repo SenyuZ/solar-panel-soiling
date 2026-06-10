@@ -37,9 +37,10 @@ manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
 ## Examples
 
 Binary test set (modular ResNet-50): **84.2% accuracy, 0.811 F1, 0.675 MCC** —
-about 10 F1 points above the best classical baseline (SVM, 0.712 F1). Full tables
-and the deep-vs-classical discussion are in
-[`reports/results.md`](reports/results.md).
+about 10 F1 points above the best classical baseline (SVM, 0.712 F1).
+Multi-class (6 classes): **macro-F1 0.857**, with the rare fault classes held up by
+class weighting; 3-way clean/soiled/damaged: **macro-F1 0.883**. Full tables and
+the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
 
 | Grad-CAM (where the model sees "dirty") | Soiling overlay (classical, Track A) |
 |---|---|
