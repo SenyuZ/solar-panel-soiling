@@ -147,19 +147,16 @@ def calibrate_reference(clean_images, size: int = 512, percentile: float = 50.0)
     return ref
 
 
-def train_power_loss_regressor(*_args, **_kwargs):  # pragma: no cover - needs dataset
-    """Track B entry point (requires the DeepSolarEye dataset).
+def train_power_loss_regressor(cfg: dict):
+    """Track B: train a CNN to predict measured % power loss (DeepSolarEye).
 
-    Reuses the CNN backbone with a single-output head trained with MSE against
-    measured % power loss. Kept as an explicit, optional path because it depends
-    on the large DeepSolarEye download.
+    Thin delegate to :func:`solarsoil.models.regression.train_regressor`. Requires
+    the DeepSolarEye dataset; build a regression manifest first with
+    ``python -m solarsoil.models.regression manifest ...`` (see that module).
     """
-    raise NotImplementedError(
-        "Track B needs the DeepSolarEye dataset. Download it with "
-        "`python -m solarsoil.data.download --source deepsolareye`, build an "
-        "(image -> power_loss) regression manifest, then train a 1-output CNN "
-        "head with MSE. See configs/severity.yaml and the README roadmap."
-    )
+    from .models.regression import train_regressor
+
+    return train_regressor(cfg)
 
 
 def main(argv: list[str] | None = None) -> None:

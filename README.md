@@ -10,11 +10,12 @@ rebuilt into a reproducible package and extended along four axes: multi-class
 classification, a classical image-processing baseline, soiling-severity
 estimation, and Grad-CAM explainability — plus an interactive demo.
 
-> **Status.** The repository is a clean, installable Python package with a passing
-> test suite. The binary CNN pipeline, classical baseline, Grad-CAM, severity
-> (Track A) and the demo all run locally (verified on Apple-Silicon MPS). The
-> multi-class and DeepSolarEye severity (Track B) paths are implemented and
-> config-driven; they require their datasets to be downloaded first (see
+> **Status.** A clean, installable Python package with 18 passing tests. The binary
+> and multi-class (6-class + 3-way condition) classifiers, the classical baseline,
+> Grad-CAM, severity Track A and the demo all run with **real results** on
+> Apple-Silicon MPS (see [`reports/results.md`](reports/results.md)). The DeepSolarEye
+> severity regressor (Track B) is implemented and verified end-to-end on synthetic
+> data; it needs the DeepSolarEye download for real numbers (see
 > [`DATASET.md`](DATASET.md)).
 
 ---
@@ -26,7 +27,7 @@ estimation, and Grad-CAM explainability — plus an interactive demo.
 | **Binary classification** | ResNet-50 transfer learning, two-stage fine-tuning (the original task) | `solarsoil.train` / `models.cnn` |
 | **Multi-class (hierarchical)** | clean / soiled {dust, bird-drop, snow} / damaged {physical, electrical} | `solarsoil.taxonomy` + configs |
 | **Classical IP baseline** | HSV colour + GLCM/LBP texture + edge features → SVM/RF, benchmarked vs the CNN | `features.classical` / `models.classical` |
-| **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss regression (Track B) | `solarsoil.severity` |
+| **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
 | **Explainability** | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
 | **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay | `app/app.py` |
 

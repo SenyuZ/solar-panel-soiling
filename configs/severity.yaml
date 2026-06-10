@@ -8,10 +8,12 @@ track_a:
   method: fixed                    # fixed | otsu (per-image adaptive)
 
 # --- Track B: data-driven regression on measured % power loss. ---
-# Requires the DeepSolarEye dataset (45k images, power-loss labels):
+# Requires the DeepSolarEye dataset (45k images; labels encoded in filenames as
+# _L_<powerloss>_I_<irradiance>). Implemented in solarsoil.models.regression.
 #   python -m solarsoil.data.download --source deepsolareye
-# Build an (image -> power_loss) regression manifest, then train a 1-output
-# CNN head with MSE. See solarsoil.severity.train_power_loss_regressor.
+#   python -m solarsoil.models.regression manifest \
+#       --data-root Data/raw/deepsolareye --out manifests/deepsolareye_manifest.csv
+#   python -m solarsoil.models.regression train --config configs/severity.yaml
 track_b:
   data_root: Data/raw/deepsolareye
   manifest: manifests/deepsolareye_manifest.csv

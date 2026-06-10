@@ -69,8 +69,16 @@ python -m solarsoil.evaluate   --model artifacts/multiclass/model.pth --manifest
   0.21–0.47). Absolute coverage is approximate — clean and dusty overlap in
   low-level cues, which is exactly why the CNN is worthwhile. Track A is best
   used as a relative index + localisation aid (red overlay below).
-* **Track B (DeepSolarEye):** power-loss MAE — _to fill_ once the dataset is
-  downloaded and a regression head is trained.
+* **Track B (DeepSolarEye):** a 1-output CNN regressor (MSE) on measured % power
+  loss, implemented in `solarsoil.models.regression` and verified end-to-end on
+  synthetic data. Power-loss MAE — _to fill_ once the 45k-image dataset is
+  downloaded:
+
+```bash
+python -m solarsoil.data.download --source deepsolareye
+python -m solarsoil.models.regression manifest --data-root Data/raw/deepsolareye --out manifests/deepsolareye_manifest.csv
+python -m solarsoil.models.regression train --config configs/severity.yaml
+```
 
 ![Soiling overlay](figures/coverage/Imgdirty_0_1_soiling.png)
 
