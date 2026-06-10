@@ -2,6 +2,9 @@
 /Data/
 /data/raw/
 
+# Large regenerable manifest (45k rows; rebuild via `solarsoil.models.regression manifest`)
+manifests/deepsolareye_manifest.csv
+
 # --- Trained weights, checkpoints, run artifacts ---
 /artifacts/
 /checkpoints/

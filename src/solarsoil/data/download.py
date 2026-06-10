@@ -37,6 +37,7 @@ SOURCES: dict[str, dict] = {
     "deepsolareye": {
         "url": "https://deep-solar-eye.github.io/",
         "desc": "45,754 images labelled with % power loss + irradiance (severity / Track B).",
+        "gdrive_id": "1qB5dPWZMi2-12sLHDykHb9i6GibbJ46l",
         "citation": "Mehta et al., DeepSolarEye, WACV 2018.",
     },
 }
@@ -58,6 +59,25 @@ def download_kaggle(dataset_id: str, dest: str | Path | None = None) -> Path:
     return dest
 
 
+def download_gdrive_zip(file_id: str, dest: str | Path) -> Path:
+    """Download a Google Drive zip via gdown and extract it under ``dest/extracted``."""
+    import zipfile
+
+    import gdown
+
+    dest = Path(dest)
+    dest.mkdir(parents=True, exist_ok=True)
+    zip_path = dest / "dataset.zip"
+    logger.info("Downloading Google Drive file %s ...", file_id)
+    gdown.download(id=file_id, output=str(zip_path), quiet=False)
+    extracted = dest / "extracted"
+    logger.info("Extracting to %s ...", extracted)
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extractall(extracted)
+    logger.info("Done: %s", extracted)
+    return extracted
+
+
 def fetch(source: str, dest_root: str | Path = "Data/raw") -> Path | None:
     """Fetch one named source into ``dest_root/<source>``."""
     if source not in SOURCES:
@@ -66,10 +86,11 @@ def fetch(source: str, dest_root: str | Path = "Data/raw") -> Path | None:
     dest = Path(dest_root) / source
     if "kaggle" in spec:
         return download_kaggle(spec["kaggle"], dest)
-    # DeepSolarEye (manual Google Drive download)
+    if "gdrive_id" in spec:
+        return download_gdrive_zip(spec["gdrive_id"], dest)
+    # Manual fallback (no automated source configured)
     logger.warning(
-        "%s is distributed via Google Drive. Visit %s, download the dataset, and\n"
-        "extract it to %s . Cite: %s",
+        "%s has no automated download. Visit %s and extract it to %s . Cite: %s",
         source,
         spec.get("url"),
         dest,

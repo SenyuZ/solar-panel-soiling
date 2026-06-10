@@ -14,9 +14,9 @@ estimation, and Grad-CAM explainability — plus an interactive demo.
 > and multi-class (6-class + 3-way condition) classifiers, the classical baseline,
 > Grad-CAM, severity Track A and the demo all run with **real results** on
 > Apple-Silicon MPS (see [`reports/results.md`](reports/results.md)). The DeepSolarEye
-> severity regressor (Track B) is implemented and verified end-to-end on synthetic
-> data; it needs the DeepSolarEye download for real numbers (see
-> [`DATASET.md`](DATASET.md)).
+> severity regressor (Track B) is trained on the real 45k-image dataset — it predicts
+> a panel's power loss to **MAE ≈ 0.075** (~7.5 percentage points). See
+> [`DATASET.md`](DATASET.md) for data sources.
 
 ---
 

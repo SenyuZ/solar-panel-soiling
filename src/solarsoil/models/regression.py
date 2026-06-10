@@ -146,6 +146,16 @@ def train_regressor(cfg: dict) -> dict:
     img_size = int(cfg.get("img_size", 224))
 
     df = pd.read_csv(manifest)
+    if cfg.get("limit"):
+        limit = int(cfg["limit"])
+        seed = int(cfg.get("seed", 123))
+        frac = min(1.0, limit / len(df))
+        # Stratified subsample: keep the train/val/test proportions.
+        df = pd.concat(
+            [g.sample(frac=frac, random_state=seed) for _, g in df.groupby("split")]
+        ).reset_index(drop=True)
+        logger.info("Subsampled to %d images (stratified by split): %s",
+                    len(df), df["split"].value_counts().to_dict())
     loaders = {}
     for split in ("train", "val", "test"):
         if split not in set(df["split"]):
@@ -208,6 +218,8 @@ def main(argv: list[str] | None = None) -> None:
     pt.add_argument("--epochs", type=int, default=None)
     pt.add_argument("--num-workers", type=int, default=None)
     pt.add_argument("--batch-size", type=int, default=None)
+    pt.add_argument("--backbone", default=None)
+    pt.add_argument("--limit", type=int, default=None, help="Subsample N images (faster runs).")
     args = ap.parse_args(argv)
 
     if args.cmd == "manifest":
@@ -219,7 +231,8 @@ def main(argv: list[str] | None = None) -> None:
     cfg = dict(cfg)
     cfg["repo_root"] = str(Path.cwd())
     for key, val in (("manifest", args.manifest), ("out_dir", args.out_dir), ("epochs", args.epochs),
-                     ("num_workers", args.num_workers), ("batch_size", args.batch_size)):
+                     ("num_workers", args.num_workers), ("batch_size", args.batch_size),
+                     ("backbone", args.backbone), ("limit", args.limit)):
         if val is not None:
             cfg[key] = val
     train_regressor(cfg)
