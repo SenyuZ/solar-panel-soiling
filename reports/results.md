@@ -39,6 +39,11 @@ python -m solarsoil.models.classical  --config configs/classical.yaml --model-ty
 python -m solarsoil.models.classical  --config configs/classical.yaml --model-type rf
 ```
 
+**Cross-dataset robustness.** The *same* binary model evaluated on a *different*
+dataset (pythonafroz tight-crop Clean/Dusty, n=383) scores **acc 0.953 · F1 0.953 ·
+MCC 0.906** — so despite Grad-CAM showing some background attention (README
+Limitations), it generalises well to unseen data.
+
 ## Multi-class & condition (pythonafroz 6-class set, n_test = 133)
 
 | Task | Backbone | Accuracy | Macro-F1 | MCC |
@@ -88,4 +93,22 @@ python -m solarsoil.models.regression train --manifest manifests/deepsolareye_ma
 
 ```bash
 python -m solarsoil.severity --image Data/Dusty --limit 25 --out-dir reports/figures/coverage
+```
+
+## Soiling segmentation — measured coverage (U-Net)
+
+A from-scratch U-Net trained on 1,279 image/dust-mask pairs (val 160, test 160)
+turns Track A's approximate index into a **measured dust coverage %** + a pixel
+mask. Test **Dice 0.38 · IoU 0.30** — modest (diffuse dust + noisy pseudo-labels
+make this hard, and the encoder is trained from scratch), but the coverage is
+directionally right: a clean panel reads **0.0%**, a dusty one **~28%** (truth 17%),
+and the mask lands on the soiled region. A pretrained-encoder U-Net, more epochs, or
+cleaner labels would raise the Dice — this is an honest from-scratch baseline.
+
+![Predicted dust mask (measured coverage)](figures/segmentation/Imgdirty_0_1_dustseg.png)
+
+```bash
+python -m solarsoil.data.download --source dust_seg
+python -m solarsoil.models.segmentation manifest --images Data/raw/dust_seg/images --masks Data/raw/dust_seg/masks --out manifests/segmentation_manifest.csv
+python -m solarsoil.models.segmentation train --config configs/segmentation.yaml
 ```

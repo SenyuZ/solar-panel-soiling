@@ -34,6 +34,11 @@ SOURCES: dict[str, dict] = {
         "desc": "Binary clean/dusty solar panel images.",
         "maps_to": "detect_solar_dust",
     },
+    "dust_seg": {
+        "kaggle": "zhengdapeng/solar-panel-dust-segmentation",
+        "desc": "Image + binary dust-mask pairs for soiling segmentation (measured coverage).",
+        "maps_to": "Team 7 / Zhengda Peng segmentation dataset",
+    },
     "deepsolareye": {
         "url": "https://deep-solar-eye.github.io/",
         "desc": "45,754 images labelled with % power loss + irradiance (severity / Track B).",

@@ -1,0 +1,20 @@
+# Soiling segmentation (U-Net) → measured dust coverage.
+# Needs the dust-segmentation dataset (image + binary dust-mask pairs):
+#   python -m solarsoil.data.download --source dust_seg
+#   python -m solarsoil.models.segmentation manifest \
+#       --images Data/raw/dust_seg/images --masks Data/raw/dust_seg/masks \
+#       --out manifests/segmentation_manifest.csv
+manifest: manifests/segmentation_manifest.csv
+
+img_size: 256              # must be a multiple of 16
+base_channels: 32          # U-Net width
+batch_size: 16
+num_workers: 2
+
+lr: 1.0e-3
+epochs: 15
+patience: 5
+
+seed: 123
+device: auto
+out_dir: artifacts/segmentation

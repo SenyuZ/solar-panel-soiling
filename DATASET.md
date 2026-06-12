@@ -45,6 +45,12 @@ condition extension recovers those labels by re-downloading it
 |---|---|---|---|
 | Severity + power loss | **DeepSolarEye** — 45,754 images labelled with measured % power loss, irradiance, timestamps | `download --source deepsolareye` (Google Drive) | Mehta et al., WACV 2018 |
 
+## Segmentation dataset (soiling coverage)
+
+| Purpose | Dataset | Access | Notes |
+|---|---|---|---|
+| Dust segmentation → measured coverage | **Solar Panel Dust Segmentation** — 1,604 image + binary dust-mask pairs (0=background, 1=dust) | `download --source dust_seg` | Created by **Team 7 (Zhengda Peng)**: CVAT-labelled supervised masks + filtered pseudo-labels over the curated panel images. Used here to train the U-Net soiling segmenter. |
+
 ## Citations
 
 ```bibtex

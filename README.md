@@ -6,11 +6,11 @@ or fault is present, *how much* of the surface is affected, and *where*.
 
 It started as a University of Technology Sydney (UTS) **Image Processing & Pattern
 Recognition** group project (binary clean/dirty classification) and has been
-rebuilt into a reproducible package and extended along four axes: multi-class
-classification, a classical image-processing baseline, soiling-severity
-estimation, and Grad-CAM explainability — plus an interactive demo.
+rebuilt into a reproducible package and extended along several axes: multi-class
+classification, a classical image-processing baseline, soiling-severity estimation
+and segmentation, and Grad-CAM explainability — plus an interactive demo.
 
-> **Status.** A clean, installable Python package with 18 passing tests. The binary
+> **Status.** A clean, installable Python package with 22 passing tests. The binary
 > and multi-class (6-class + 3-way condition) classifiers, the classical baseline,
 > Grad-CAM, severity Track A and the demo all run with **real results** on
 > Apple-Silicon MPS (see [`reports/results.md`](reports/results.md)). The DeepSolarEye
@@ -28,6 +28,7 @@ estimation, and Grad-CAM explainability — plus an interactive demo.
 | **Multi-class (hierarchical)** | clean / soiled {dust, bird-drop, snow} / damaged {physical, electrical} | `solarsoil.taxonomy` + configs |
 | **Classical IP baseline** | HSV colour + GLCM/LBP texture + edge features → SVM/RF, benchmarked vs the CNN | `features.classical` / `models.classical` |
 | **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
+| **Soiling segmentation** | from-scratch **U-Net** → measured dust coverage % + pixel mask | `models.segmentation` |
 | **Explainability** | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
 | **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay | `app/app.py` |
 
@@ -53,6 +54,11 @@ the deep-vs-classical discussion are in [`reports/results.md`](reports/results.m
 > map — and on the binary model it sometimes lands on the background (see
 > **Limitations** below).
 
+A **supervised U-Net** (trained on dust masks) now measures dust coverage directly —
+a clean panel reads 0% coverage, this dusty one ~28% (test Dice 0.38):
+
+![Measured dust segmentation](reports/figures/segmentation/Imgdirty_0_1_dustseg.png)
+
 ## Repository layout
 
 ```
@@ -60,7 +66,7 @@ solar-panel-soiling/
 ├── src/solarsoil/         # the package
 │   ├── data/              # dedup, manifest, datasets, downloads
 │   ├── features/          # classical hand-crafted features
-│   ├── models/            # CNN backbones + classical SVM/RF
+│   ├── models/            # CNN backbones, classical SVM/RF, U-Net segmenter
 │   ├── explain/           # Grad-CAM
 │   ├── severity.py        # soiling coverage / severity (Tracks A & B)
 │   ├── taxonomy.py        # binary / condition / multiclass label spaces
@@ -146,10 +152,11 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 - **The binary model partly exploits background context (shortcut learning).**
   Grad-CAM revealed that on the uncurated, whole-scene Dust-Detection photos, the
   clean/dirty classifier sometimes attends to the *surroundings* (buildings, sky,
-  people) rather than the panel — because the two classes differ in their
-  backgrounds, the model can partly "cheat." It still scores ~0.81 F1, but it would
-  not generalise to, say, a clean panel in a dusty setting. The multi-class model
-  (tight panel crops) does **not** show this — its Grad-CAM sits on the actual fault.
+  people) rather than the panel. I tested whether this hurts generalisation with a
+  **cross-dataset evaluation**: on the *different* pythonafroz tight-crop Clean/Dusty
+  set the model still scored **0.95 F1** — so it has clearly learned real panel
+  features too, and the shortcut is present but **not** catastrophic. The multi-class
+  model (tight panel crops) doesn't show it at all.
 
   ![Grad-CAM failure case — attention on background buildings, not the panel](reports/figures/gradcam/Imgclean_0_0_gradcam.png)
 
