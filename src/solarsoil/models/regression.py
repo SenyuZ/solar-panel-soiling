@@ -8,7 +8,7 @@ classical Track A soiling index in :mod:`solarsoil.severity`.
 
 Usage::
 
-    # 1. download DeepSolarEye (manual Google Drive — see solarsoil.data.download)
+    # 1. download DeepSolarEye (auto via gdown — see solarsoil.data.download)
     # 2. build the regression manifest by parsing power loss from filenames
     python -m solarsoil.models.regression manifest \
         --data-root Data/raw/deepsolareye --out manifests/deepsolareye_manifest.csv

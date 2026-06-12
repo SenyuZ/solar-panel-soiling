@@ -43,9 +43,15 @@ Multi-class (6 classes): **macro-F1 0.857**, with the rare fault classes held up
 class weighting; 3-way clean/soiled/damaged: **macro-F1 0.883**. Full tables and
 the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
 
-| Grad-CAM (where the model sees "dirty") | Soiling overlay (classical, Track A) |
+| Grad-CAM — *where the model looks* (multi-class, physical damage) | Soiling coverage — *how much surface is dirty* (classical, Track A) |
 |---|---|
-| ![Grad-CAM](reports/figures/gradcam/Imgdirty_1000_1_gradcam.png) | ![Soiling](reports/figures/coverage/Imgdirty_0_1_soiling.png) |
+| ![Grad-CAM](reports/figures/multiclass_physical_gradcam.png) | ![Soiling](reports/figures/coverage/Imgdirty_0_1_soiling.png) |
+
+> ⚠️ These are **two different things**: Grad-CAM is a coarse *attention* heatmap
+> ("where did the classifier look?"), while the soiling overlay is the *coverage*
+> estimate ("how much of the surface is dirty?"). A Grad-CAM blob is **not** a dirt
+> map — and on the binary model it sometimes lands on the background (see
+> **Limitations** below).
 
 ## Repository layout
 
@@ -109,7 +115,7 @@ python app/app.py
 ```bash
 # Multi-class (6 classes) / condition (clean·soiled·damaged)
 python -m solarsoil.data.download --source faulty
-python -m solarsoil.data.manifest --data-root Data/raw/faulty --out manifests/multiclass_manifest.csv --label-space multiclass
+python -m solarsoil.data.manifest --data-root Data/raw/faulty/Faulty_solar_panel --out manifests/multiclass_manifest.csv --label-space multiclass
 python -m solarsoil.train --config configs/multiclass.yaml      # or configs/condition.yaml
 
 # Severity Track B (DeepSolarEye, measured % power loss)
@@ -134,6 +140,33 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   from DeepSolarEye for a calibrated estimate.
 - **Explainability.** Grad-CAM over the last conv block shows *where* the model
   sees soiling/faults.
+
+## Limitations & honest caveats
+
+- **The binary model partly exploits background context (shortcut learning).**
+  Grad-CAM revealed that on the uncurated, whole-scene Dust-Detection photos, the
+  clean/dirty classifier sometimes attends to the *surroundings* (buildings, sky,
+  people) rather than the panel — because the two classes differ in their
+  backgrounds, the model can partly "cheat." It still scores ~0.81 F1, but it would
+  not generalise to, say, a clean panel in a dusty setting. The multi-class model
+  (tight panel crops) does **not** show this — its Grad-CAM sits on the actual fault.
+
+  ![Grad-CAM failure case — attention on background buildings, not the panel](reports/figures/gradcam/Imgclean_0_0_gradcam.png)
+
+  *Failure case: a "clean" prediction driven by the background cityscape/crane, not
+  the panels at the bottom.* **Mitigation (future work):** detect/crop to the panel
+  region before classifying, so only the panel and its dirt are visible.
+
+- **Grad-CAM is coarse and is not a coverage map.** It comes from a ~7×7 conv grid,
+  so it's always a blurry blob: it answers *where the model looked*, not *which
+  pixels are dirty*. Surface-area "how dirty" is a **separate** output (the classical
+  soiling overlay, Track A).
+
+- **Track A's soiling index is unsupervised and approximate** (relative desaturation,
+  not calibrated coverage); for trustworthy numbers use the Track B power-loss model.
+
+- **Track B is a quick run** (ResNet-18, 12k-image subset, 8 epochs); training on the
+  full 45k set for longer would lower the MAE further.
 
 ## Tests
 

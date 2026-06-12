@@ -8,7 +8,7 @@ Kaggle sources need credentials: set ``KAGGLE_USERNAME`` / ``KAGGLE_KEY`` or pla
 ``~/.kaggle/kaggle.json`` (https://www.kaggle.com/docs/api).
 
 DeepSolarEye is distributed via Google Drive from the authors' project page; we
-print instructions rather than hard-coding a fragile file id.
+download and extract it automatically via gdown (~864 MB).
 """
 from __future__ import annotations
 
