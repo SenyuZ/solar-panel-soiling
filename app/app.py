@@ -4,8 +4,10 @@ Shows the whole pipeline in one place:
 * CNN classification (binary or multi-class, whichever model is loaded) with
   class probabilities,
 * a Grad-CAM heatmap of where the model looked,
-* a classical soiling-coverage overlay with a soiling index + severity bucket and
-  an illustrative power-loss estimate.
+* a classical soiling-coverage overlay with a soiling index + severity bucket, and
+  a power-loss estimate — the measured DeepSolarEye Track B regressor when its
+  checkpoint is present (``artifacts/severity/model.pth``), otherwise the classical
+  illustrative heuristic.
 
 Run::
 
@@ -32,13 +34,18 @@ from solarsoil.severity import estimate_soiling, overlay_mask
 from solarsoil.utils import get_device
 
 # Populated by load_model(); kept module-global so the UI callback can use it.
-STATE: dict = {"model": None, "bundle": None, "device": get_device()}
+STATE: dict = {"model": None, "bundle": None, "regressor": None,
+               "reg_bundle": None, "device": get_device()}
 
 _CANDIDATE_MODELS = [
     "artifacts/condition/model.pth",
     "artifacts/multiclass/model.pth",
     "artifacts/binary/model.pth",
 ]
+
+# Track B: measured power-loss regressor (DeepSolarEye). Optional — falls back to
+# the classical illustrative estimate when this checkpoint is absent.
+_SEVERITY_MODEL = "artifacts/severity/model.pth"
 
 
 def load_model(model_path: str | None) -> str:
@@ -58,6 +65,19 @@ def load_model(model_path: str | None) -> str:
     return f"Loaded {bundle['task']} model ({bundle['backbone']}): {model_path}"
 
 
+def load_regressor_into_state() -> None:
+    """Load the Track B power-loss regressor into STATE if its checkpoint exists."""
+    if not Path(_SEVERITY_MODEL).exists():
+        STATE["regressor"], STATE["reg_bundle"] = None, None
+        return
+    try:
+        from solarsoil.models.regression import load_regressor
+
+        STATE["regressor"], STATE["reg_bundle"] = load_regressor(_SEVERITY_MODEL, STATE["device"])
+    except Exception:  # noqa: BLE001 — demo stays usable on the classical fallback
+        STATE["regressor"], STATE["reg_bundle"] = None, None
+
+
 def analyze(image: Image.Image):
     """Run the full pipeline on one PIL image for the Gradio callback."""
     if image is None:
@@ -66,11 +86,27 @@ def analyze(image: Image.Image):
     # --- Classical soiling estimate (always available) ---
     soil = estimate_soiling(image)
     soil_overlay = overlay_mask(image, soil["mask"])
+
+    # --- Power loss: prefer the measured Track B regressor, else classical ---
+    reg = STATE.get("regressor")
+    if reg is not None:
+        from solarsoil.models.regression import predict_power_loss
+
+        pl = predict_power_loss(reg, STATE["reg_bundle"], image, STATE["device"]) * 100
+        power_line = (
+            f"**power loss ≈ {pl:.1f}%** _(DeepSolarEye regressor, test MAE 0.075)_"
+        )
+    else:
+        power_line = (
+            f"**est. power loss ≈ {soil['power_loss_pct']:.1f}%** "
+            f"_(classical heuristic — train Track B for a measured estimate)_"
+        )
+
     summary = (
         f"**Soiling index:** {soil['soiling_index']:.3f}  ·  "
         f"**severity:** {soil['severity']}  ·  "
-        f"**coverage ≈** {soil['coverage_pct']:.1f}%  ·  "
-        f"**est. power loss ≈** {soil['power_loss_pct']:.1f}%\n\n"
+        f"**coverage ≈** {soil['coverage_pct']:.1f}%\n\n"
+        f"{power_line}\n\n"
         f"_Soiling index is an unsupervised relative measure (desaturation vs a "
         f"clean reference); see DATASET.md / README for its limits._"
     )
@@ -107,6 +143,7 @@ def build_demo() -> gr.Blocks:
             "explanation, and a **classical soiling estimate**."
         )
         status = gr.Markdown(load_model(STATE.get("_model_path")))
+        load_regressor_into_state()
         with gr.Row():
             with gr.Column():
                 inp = gr.Image(type="pil", label="Solar panel image")

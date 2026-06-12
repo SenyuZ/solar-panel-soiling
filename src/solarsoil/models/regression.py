@@ -32,7 +32,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from ..data.datasets import build_transforms
 from ..data.dedup import iter_images
-from ..engine import save_checkpoint
+from ..engine import load_checkpoint, save_checkpoint
 from ..models.cnn import build_model
 from ..utils import get_device, load_config, save_json, set_seed, setup_logging
 
@@ -110,6 +110,31 @@ class RegressionDataset(Dataset):
         with Image.open(self.repo_root / row["filepath"]) as im:
             x = self.transform(im)
         return x, torch.tensor([float(row["power_loss"])], dtype=torch.float32)
+
+
+def load_regressor(model_path: str | Path, device):
+    """Load a trained Track B power-loss regressor bundle for inference."""
+    bundle = load_checkpoint(model_path, map_location=device)
+    model, _ = build_model(bundle.get("backbone", "resnet50"), num_classes=1, pretrained=False)
+    model.load_state_dict(bundle["model_state_dict"])
+    model.to(device).eval()
+    return model, bundle
+
+
+@torch.no_grad()
+def predict_power_loss(model, bundle, image, device) -> float:
+    """Predict the measured power-loss *fraction* (clamped to [0, 1]) for one image.
+
+    ``image`` may be a PIL image or a path. Multiply by 100 for a percentage.
+    """
+    tfm = build_transforms(int(bundle.get("img_size", 224)), train=False)
+    if isinstance(image, Image.Image):
+        x = tfm(image.convert("RGB")).unsqueeze(0).to(device)
+    else:
+        with Image.open(image) as im:
+            x = tfm(im.convert("RGB")).unsqueeze(0).to(device)
+    pred = float(model(x).item())
+    return max(0.0, min(1.0, pred))
 
 
 def _run_epoch(model, loader, criterion, optimizer, device, train: bool):

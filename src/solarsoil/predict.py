@@ -61,16 +61,33 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--device", default="auto")
     ap.add_argument("--gradcam", action="store_true", help="Also save a Grad-CAM overlay.")
     ap.add_argument("--out-dir", default="reports/figures/gradcam")
+    ap.add_argument("--power-loss", action="store_true",
+                    help="Also predict %% power loss with the Track B (DeepSolarEye) regressor.")
+    ap.add_argument("--severity-model", default="artifacts/severity/model.pth",
+                    help="Track B regressor checkpoint (used with --power-loss).")
     args = ap.parse_args(argv)
 
     device = get_device(args.device)
     model, bundle = load_model(args.model, device)
 
+    regressor = reg_bundle = None
+    if args.power_loss:
+        if Path(args.severity_model).exists():
+            from .models.regression import load_regressor  # lazy import
+            regressor, reg_bundle = load_regressor(args.severity_model, device)
+        else:
+            logger.warning("--power-loss set but no regressor at %s; skipping.", args.severity_model)
+
     images = _gather_images(Path(args.image))
     for img_path in images:
         res = predict_image(model, bundle, img_path, device)
         probs = "  ".join(f"{c}={p:.3f}" for c, p in res["probabilities"].items())
-        print(f"{img_path.name:40s} -> {res['prediction']:16s} ({res['confidence']:.3f})  [{probs}]")
+        line = f"{img_path.name:40s} -> {res['prediction']:16s} ({res['confidence']:.3f})  [{probs}]"
+        if regressor is not None:
+            from .models.regression import predict_power_loss  # lazy import
+            pl = predict_power_loss(regressor, reg_bundle, img_path, device) * 100
+            line += f"  power_loss≈{pl:.1f}%"
+        print(line)
 
         if args.gradcam:
             from .explain.gradcam import save_gradcam_overlay  # lazy import

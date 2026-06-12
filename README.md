@@ -30,7 +30,7 @@ and segmentation, and Grad-CAM explainability — plus an interactive demo.
 | **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
 | **Soiling segmentation** | **ResNet-34 U-Net** (pretrained encoder) → measured dust coverage % + pixel mask | `models.segmentation` |
 | **Explainability** | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
-| **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay | `app/app.py` |
+| **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay + measured power-loss (Track B when available) | `app/app.py` |
 
 Engineering: config-driven CLIs, fixed seeds, a non-destructive stratified
 manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
@@ -103,6 +103,9 @@ python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manif
 # 4. Predict on a single image, with a Grad-CAM overlay
 python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --gradcam
 
+# 4b. Add a measured % power-loss estimate (Track B / DeepSolarEye regressor)
+python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --power-loss
+
 # 5. Classical baseline (image processing + SVM) for comparison
 python -m solarsoil.models.classical --config configs/classical.yaml --model-type svm
 
@@ -172,8 +175,18 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   multi-class images (above) don't show this at all. A related, milder point: on a
   genuinely **clean** panel there is no dirt to localize, so a "find the dirt"
   heatmap or coverage map is ill-posed and will point somewhere arbitrary.
-  **Mitigation (future work):** detect/crop to the panel region before classifying,
-  so only the panel and its dirt are visible.
+
+  **Mitigation (future work) — and why standardised data matters.** The fix is to
+  **detect and crop to the panel region before classifying**, so only the panel and
+  its dirt are in frame. That removes the background the model can cheat on, makes
+  the attention maps and coverage overlays meaningful, and would need a panel
+  detector or segmentation head (real work, hence future). More broadly, the failures
+  here are a **data-quality** story as much as a modelling one: the tight-crop
+  pythonafroz and multi-class sets — where every image is *standardised* to a single
+  centred panel — give clean attention, honest coverage, and 0.95 cross-dataset F1,
+  while the uncurated wide-angle photos do not. Consistent framing, scale, and
+  subject isolation at capture time are worth more than extra model capacity; a
+  detector/crop step is really a way to *impose* that standardisation after the fact.
 
 - **Grad-CAM is a diagnostic, not a dirt localizer.** It comes from a ~7×7 conv
   grid, so it's always a blurry blob: it answers *where the model looked*, not
