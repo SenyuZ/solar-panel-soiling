@@ -6,12 +6,14 @@
 #       --out manifests/segmentation_manifest.csv
 manifest: manifests/segmentation_manifest.csv
 
-img_size: 256              # must be a multiple of 16
-base_channels: 32          # U-Net width
+arch: resnet34_unet        # resnet34_unet (ImageNet-pretrained encoder) | unet (from scratch)
+pretrained: true
+img_size: 256              # multiple of 32 for the ResNet encoder
+base_channels: 32          # only used by the from-scratch `unet`
 batch_size: 16
 num_workers: 2
 
-lr: 1.0e-3
+lr: 3.0e-4
 epochs: 15
 patience: 5
 

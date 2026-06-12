@@ -97,13 +97,15 @@ python -m solarsoil.severity --image Data/Dusty --limit 25 --out-dir reports/fig
 
 ## Soiling segmentation — measured coverage (U-Net)
 
-A from-scratch U-Net trained on 1,279 image/dust-mask pairs (val 160, test 160)
-turns Track A's approximate index into a **measured dust coverage %** + a pixel
-mask. Test **Dice 0.38 · IoU 0.30** — modest (diffuse dust + noisy pseudo-labels
-make this hard, and the encoder is trained from scratch), but the coverage is
-directionally right: a clean panel reads **0.0%**, a dusty one **~28%** (truth 17%),
-and the mask lands on the soiled region. A pretrained-encoder U-Net, more epochs, or
-cleaner labels would raise the Dice — this is an honest from-scratch baseline.
+A U-Net with an **ImageNet-pretrained ResNet-34 encoder**, trained on 1,279
+image/dust-mask pairs (val 160, test 160), turns Track A's approximate index into a
+**measured dust coverage %** + a pixel mask. Test **Dice 0.47 · IoU 0.38** — the
+pretrained encoder lifts a from-scratch U-Net's 0.38 / 0.30. Dust segmentation is
+genuinely hard (diffuse, fuzzy boundaries + noisy pseudo-labels cap it), but the
+estimate is now well-localised: a clean panel reads **0.0%**, the dusty example
+**12.8%** (truth 16.6%; the from-scratch net over-predicted ~28%), and the mask
+traces the soiled *left* side rather than a crude top band. More epochs or cleaner
+human labels would push it further.
 
 ![Predicted dust mask (measured coverage)](figures/segmentation/Imgdirty_0_1_dustseg.png)
 

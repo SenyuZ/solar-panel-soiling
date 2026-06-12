@@ -28,7 +28,7 @@ and segmentation, and Grad-CAM explainability — plus an interactive demo.
 | **Multi-class (hierarchical)** | clean / soiled {dust, bird-drop, snow} / damaged {physical, electrical} | `solarsoil.taxonomy` + configs |
 | **Classical IP baseline** | HSV colour + GLCM/LBP texture + edge features → SVM/RF, benchmarked vs the CNN | `features.classical` / `models.classical` |
 | **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
-| **Soiling segmentation** | from-scratch **U-Net** → measured dust coverage % + pixel mask | `models.segmentation` |
+| **Soiling segmentation** | **ResNet-34 U-Net** (pretrained encoder) → measured dust coverage % + pixel mask | `models.segmentation` |
 | **Explainability** | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
 | **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay | `app/app.py` |
 
@@ -54,8 +54,8 @@ the deep-vs-classical discussion are in [`reports/results.md`](reports/results.m
 > map — and on the binary model it sometimes lands on the background (see
 > **Limitations** below).
 
-A **supervised U-Net** (trained on dust masks) now measures dust coverage directly —
-a clean panel reads 0% coverage, this dusty one ~28% (test Dice 0.38):
+A **ResNet-34 U-Net** (ImageNet-pretrained encoder) measures dust coverage directly —
+a clean panel reads 0%, this dusty one **12.8%** (truth 17%; test Dice 0.47):
 
 ![Measured dust segmentation](reports/figures/segmentation/Imgdirty_0_1_dustseg.png)
 

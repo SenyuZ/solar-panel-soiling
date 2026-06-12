@@ -1,8 +1,8 @@
 """Soiling segmentation (U-Net) → measured per-image dirt coverage.
 
-Trains a compact, from-scratch **U-Net** on the dust-segmentation dataset
-(image -> binary dust mask, 0=background / 1=dust) to predict *which pixels are
-soiled*. This upgrades the classical, approximate Track-A soiling index
+Trains a **U-Net** (from-scratch, or with an ImageNet-pretrained ResNet-34 encoder)
+on the dust-segmentation dataset (image -> binary dust mask, 0=background / 1=dust)
+to predict *which pixels are soiled*. This upgrades the classical, approximate Track-A soiling index
 (:mod:`solarsoil.severity`) into a **measured coverage percentage** plus a
 pixel-level localisation of the dirt.
 
@@ -81,6 +81,64 @@ class UNet(nn.Module):
         x = self.u2(torch.cat([self.up2(x), c2], 1))
         x = self.u1(torch.cat([self.up1(x), c1], 1))
         return self.out(x)  # logits (B, 1, H, W)
+
+
+class _Up(nn.Module):
+    def __init__(self, c_in: int, c_skip: int, c_out: int) -> None:
+        super().__init__()
+        self.up = nn.ConvTranspose2d(c_in, c_out, 2, stride=2)
+        self.conv = _DoubleConv(c_out + c_skip, c_out)
+
+    def forward(self, x, skip):
+        x = self.up(x)
+        if x.shape[-2:] != skip.shape[-2:]:
+            x = torch.nn.functional.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
+        return self.conv(torch.cat([x, skip], 1))
+
+
+class ResUNet(nn.Module):
+    """U-Net with an ImageNet-pretrained ResNet-34 encoder (input must be /32)."""
+
+    def __init__(self, out_ch: int = 1, pretrained: bool = True) -> None:
+        super().__init__()
+        from torchvision import models
+
+        weights = models.ResNet34_Weights.IMAGENET1K_V1 if pretrained else None
+        r = models.resnet34(weights=weights)
+        self.input = nn.Sequential(r.conv1, r.bn1, r.relu)  # 64ch, H/2
+        self.maxpool = r.maxpool
+        self.layer1, self.layer2 = r.layer1, r.layer2  # 64ch H/4, 128ch H/8
+        self.layer3, self.layer4 = r.layer3, r.layer4  # 256ch H/16, 512ch H/32
+        self.up4 = _Up(512, 256, 256)
+        self.up3 = _Up(256, 128, 128)
+        self.up2 = _Up(128, 64, 64)
+        self.up1 = _Up(64, 64, 64)
+        self.final_up = nn.ConvTranspose2d(64, 32, 2, stride=2)
+        self.out = nn.Sequential(_DoubleConv(32, 32), nn.Conv2d(32, out_ch, 1))
+
+    def forward(self, x):
+        x0 = self.input(x)
+        x1 = self.layer1(self.maxpool(x0))
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
+        x4 = self.layer4(x3)
+        d = self.up4(x4, x3)
+        d = self.up3(d, x2)
+        d = self.up2(d, x1)
+        d = self.up1(d, x0)
+        return self.out(self.final_up(d))
+
+
+def build_segmenter(cfg: dict) -> nn.Module:
+    if cfg.get("arch", "unet") == "resnet34_unet":
+        return ResUNet(pretrained=cfg.get("pretrained", True))
+    return UNet(base=int(cfg.get("base_channels", 32)))
+
+
+def _model_from_bundle(bundle: dict) -> nn.Module:
+    if bundle.get("arch", "unet") == "resnet34_unet":
+        return ResUNet(pretrained=False)
+    return UNet(base=bundle.get("base_channels", 32))
 
 
 # --------------------------- data ---------------------------
@@ -190,7 +248,7 @@ def train_segmenter(cfg: dict) -> dict:
         loaders[sp] = DataLoader(ds, batch_size=int(cfg.get("batch_size", 16)),
                                  shuffle=(sp == "train"), num_workers=int(cfg.get("num_workers", 2)))
 
-    model = UNet(base=base).to(device)
+    model = build_segmenter(cfg).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=float(cfg.get("lr", 1e-3)))
     bce = nn.BCEWithLogitsLoss()
     epochs, patience = int(cfg.get("epochs", 15)), int(cfg.get("patience", 5))
@@ -214,7 +272,7 @@ def train_segmenter(cfg: dict) -> dict:
         vd, vi = _eval(model, loaders.get("val", loaders["train"]), device)
         logger.info("[%02d/%d] train loss %.4f | val dice %.4f iou %.4f", ep + 1, epochs, tot / max(n, 1), vd, vi)
         bundle = {"model_state_dict": model.state_dict(), "img_size": img_size,
-                  "base_channels": base, "task": "segmentation"}
+                  "base_channels": base, "arch": cfg.get("arch", "unet"), "task": "segmentation"}
         save_checkpoint(bundle, out_dir / "last.pth")
         if vd > best:
             best, wait = vd, 0
@@ -237,7 +295,7 @@ def train_segmenter(cfg: dict) -> dict:
 # --------------------------- inference / coverage ---------------------------
 def load_segmenter(model_path, device):
     bundle = load_checkpoint(model_path, map_location=device)
-    model = UNet(base=bundle.get("base_channels", 32))
+    model = _model_from_bundle(bundle)
     model.load_state_dict(bundle["model_state_dict"])
     model.to(device).eval()
     return model, bundle
