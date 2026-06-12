@@ -103,7 +103,9 @@ python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manif
 # 4. Predict on a single image, with a Grad-CAM overlay
 python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --gradcam
 
-# 4b. Add a measured % power-loss estimate (Track B / DeepSolarEye regressor)
+# 4b. Add a measured % power-loss estimate (Track B / DeepSolarEye regressor).
+#     NB: accurate only on panel-filling photos; on wide background-heavy shots
+#     it is cross-domain and indicative at best — see Limitations.
 python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --power-loss
 
 # 5. Classical baseline (image processing + SVM) for comparison
@@ -206,6 +208,15 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 
 - **Track B is a quick run** (ResNet-18, 12k-image subset, 8 epochs); training on the
   full 45k set for longer would lower the MAE further.
+
+- **Track B is calibrated to DeepSolarEye's domain, not arbitrary photos.** The
+  **MAE ≈ 0.075** holds on DeepSolarEye's own test split — close-framed panels that
+  fill the image. Pointing the regressor at the wide-angle Dust-Detection photos
+  (or any shot where the panel is a small subject against a large background) is a
+  **cross-domain** use: the number it returns is *indicative at best and will not be
+  accurate* — the same background-dominance problem described above. Treat the
+  on-image power-loss from `--power-loss` / the demo as a real number **only on
+  panel-filling images**; for wide scenes, crop to the panel first.
 
 ## Tests
 

@@ -94,7 +94,9 @@ def analyze(image: Image.Image):
 
         pl = predict_power_loss(reg, STATE["reg_bundle"], image, STATE["device"]) * 100
         power_line = (
-            f"**power loss ≈ {pl:.1f}%** _(DeepSolarEye regressor, test MAE 0.075)_"
+            f"**power loss ≈ {pl:.1f}%** _(DeepSolarEye regressor, test MAE 0.075; "
+            f"accurate on panel-filling photos — cross-domain & indicative on wide, "
+            f"background-heavy shots)_"
         )
     else:
         power_line = (
