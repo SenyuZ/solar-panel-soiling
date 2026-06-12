@@ -158,16 +158,35 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   features too, and the shortcut is present but **not** catastrophic. The multi-class
   model (tight panel crops) doesn't show it at all.
 
-  ![Grad-CAM failure case — attention on background buildings, not the panel](reports/figures/gradcam/Imgclean_0_0_gradcam.png)
+  | ✅ Works on tight crops | ❌ Fails on wide scenes |
+  |---|---|
+  | ![Grad-CAM success — attention on the bird droppings](reports/figures/gradcam_multiclass/Bird%20%2810%29_gradcam.png) | ![Grad-CAM failure — attention on background buildings, not the panel](reports/figures/gradcam/Imgclean_0_0_gradcam.png) |
+  | Both hot spots land on the actual bird droppings (multi-class, tight panel crop). | A "clean" prediction driven by the background cityscape/crane, not the panels at the bottom. |
 
-  *Failure case: a "clean" prediction driven by the background cityscape/crane, not
-  the panels at the bottom.* **Mitigation (future work):** detect/crop to the panel
-  region before classifying, so only the panel and its dirt are visible.
+  **Why the wide-scene cases fail (one root cause).** Almost every bad figure in this
+  project — the heatmap on a person standing on the array, the coverage overlay
+  smeared across sky and buildings, the empty segmentation mask — comes from the
+  **uncurated wide-angle Dust-Detection photos**, where the panel occupies a *small
+  fraction* of the frame. Both the attention map and the unsupervised desaturation
+  then latch onto whatever dominates the image, which is background. The tight-crop
+  multi-class images (above) don't show this at all. A related, milder point: on a
+  genuinely **clean** panel there is no dirt to localize, so a "find the dirt"
+  heatmap or coverage map is ill-posed and will point somewhere arbitrary.
+  **Mitigation (future work):** detect/crop to the panel region before classifying,
+  so only the panel and its dirt are visible.
 
-- **Grad-CAM is coarse and is not a coverage map.** It comes from a ~7×7 conv grid,
-  so it's always a blurry blob: it answers *where the model looked*, not *which
-  pixels are dirty*. Surface-area "how dirty" is a **separate** output (the classical
-  soiling overlay, Track A).
+- **Grad-CAM is a diagnostic, not a dirt localizer.** It comes from a ~7×7 conv
+  grid, so it's always a blurry blob: it answers *where the model looked*, not
+  *which pixels are dirty*. That makes it well-suited to **discrete, localized
+  faults** (a crack, a clump of bird droppings) but a poor fit for **diffuse soiling**
+  (a dust film or snow over the whole panel), where there's no single spot to point
+  at and the blob just lands on the highest-contrast patch. Its real value in this
+  project is **model introspection** — it is how the background shortcut above was
+  discovered. Spatial extent ("how much / where is the dirt") is answered by the
+  **segmentation model** and the classical **soiling overlay** (Track A), which are
+  the right tools for the job. Sharper CAM variants (Grad-CAM++, Score-CAM, LayerCAM)
+  would give less blobby, multi-region maps but remain bounded by the conv
+  resolution.
 
 - **Track A's soiling index is unsupervised and approximate** (relative desaturation,
   not calibrated coverage); for trustworthy numbers use the Track B power-loss model.
