@@ -256,13 +256,21 @@ def coverage_from_prob(prob, thr: float = 0.5) -> float:
     return float((prob > thr).mean())
 
 
-def overlay_dust(image, prob, size: int, thr: float = 0.5, alpha: float = 0.45) -> Image.Image:
-    """Tint predicted dust pixels red over the image."""
-    base = (image if isinstance(image, Image.Image) else Image.open(image)).convert("RGB").resize((size, size))
+def overlay_dust(image, prob, thr: float = 0.5, alpha: float = 0.45) -> Image.Image:
+    """Tint predicted dust pixels red over the image, at the image's native size.
+
+    The probability map (predicted at the model's square working size) is resized
+    back to the original aspect ratio so the overlay isn't distorted.
+    """
+    base = (image if isinstance(image, Image.Image) else Image.open(image)).convert("RGB")
+    w, h = base.size
+    prob_full = np.asarray(
+        Image.fromarray((np.clip(prob, 0, 1) * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR)
+    ) / 255.0
     base_np = np.asarray(base, dtype=np.float32) / 255.0
     red = np.zeros_like(base_np)
     red[..., 0] = 1.0
-    mask = (prob > thr)[..., None]
+    mask = (prob_full > thr)[..., None]
     blend = np.where(mask, (1 - alpha) * base_np + alpha * red, base_np)
     return Image.fromarray((blend * 255).clip(0, 255).astype(np.uint8))
 
@@ -270,7 +278,7 @@ def overlay_dust(image, prob, size: int, thr: float = 0.5, alpha: float = 0.45) 
 def save_prediction(model, bundle, image_path, out_path, device, thr: float = 0.5) -> dict:
     """Predict the dust mask for one image; save an overlay; return coverage %."""
     prob = predict_dust(model, bundle, image_path, device)
-    overlay = overlay_dust(Image.open(image_path), prob, bundle["img_size"], thr)
+    overlay = overlay_dust(Image.open(image_path), prob, thr)
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     overlay.save(out_path)
