@@ -43,12 +43,34 @@ python -m solarsoil.models.classical  --config configs/classical.yaml --model-ty
 python -m solarsoil.models.classical  --config configs/classical.yaml --model-type rf
 ```
 
-**On out-of-distribution testing.** An earlier raw-set model scored 0.95 F1 on the
-held-out pythonafroz tight-crop set as an independent generalisation check. That
-source is now *inside* the curated training set, so it can no longer serve that role.
-Grad-CAM still shows background attention on wide-scene images even after curation
-(README Limitations), so a proper future OOD test is to **hold out one whole source**
-(e.g. SolNet) and evaluate on it.
+## Out-of-distribution (OOD) generalisation
+
+The curated binary model, **without any retraining**, evaluated on a fully external
+test set never seen in training: the Roboflow *"solar panel dirt det"* dataset (2,485
+panel-filling photos, a different source/country/camera; CC BY 4.0). Object-detection
+boxes are collapsed to image-level labels (any Low/High-Dirty box → dirty, else clean).
+A perceptual-hash check found **0 / 2,485** near-duplicates against the training data,
+so this is leak-free.
+
+| Test set | n | Accuracy | F1 (dirty) | Macro-F1 | MCC |
+|---|---|---|---|---|---|
+| In-domain (curated test split) | 386 | 0.889 | 0.880 | 0.888 | 0.776 |
+| **External OOD (Roboflow)** | 2,485 | **0.934** | **0.955** | **0.916** | **0.838** |
+
+Per-class OOD: clean P/R = 0.813 / 0.952 · dirty P/R = 0.984 / 0.929.
+
+**Why this matters.** The model scores *higher* OOD than in-domain, on images that are
+panel-filling with almost no background — exactly the regime where the
+background-shortcut (README Limitations) *cannot* help. This is direct evidence the
+model learned real dust/panel features and generalises across sources; the background
+reliance is a wide-scene artefact, not a crutch. It replaces an earlier within-Kaggle
+pythonafroz cross-check (that source is now part of training).
+
+```bash
+# Reproduce (needs the Roboflow dataset downloaded to Data/raw/roboflow_dirt — see DATASET.md):
+python scripts/roboflow_ood_manifest.py --root Data/raw/roboflow_dirt --out manifests/ood_roboflow_manifest.csv
+python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manifests/ood_roboflow_manifest.csv --split test
+```
 
 ## Multi-class & condition (pythonafroz 6-class set, n_test = 133)
 

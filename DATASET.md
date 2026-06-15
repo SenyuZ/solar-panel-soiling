@@ -47,6 +47,36 @@ condition extension recovers those labels by re-downloading it
 |---|---|---|---|
 | Severity + power loss | **DeepSolarEye** — 45,754 images labelled with measured % power loss, irradiance, timestamps | `download --source deepsolareye` (Google Drive) | Mehta et al., WACV 2018 |
 
+## Out-of-distribution (OOD) test set — binary generalisation
+
+A **fully external** dataset used *only for evaluation* (never in training), to test
+whether the binary model generalises beyond its training sources.
+
+| Purpose | Dataset | Access | Licence |
+|---|---|---|---|
+| External OOD test | **"solar panel dirt det"** (alex-jcvyb) — 2,489 panel-filling photos, different source/country/camera, classes Clean / Low-Dirty / High-Dirty | [Roboflow Universe](https://universe.roboflow.com/alex-jcvyb/solar-panel-dirt-det) | CC BY 4.0 |
+
+Download (needs a free Roboflow account + API key, and `pip install roboflow`):
+
+```python
+from roboflow import Roboflow
+rf = Roboflow(api_key="YOUR_KEY")
+rf.workspace("alex-jcvyb").project("solar-panel-dirt-det").version(1).download(
+    "coco", location="Data/raw/roboflow_dirt")
+```
+
+Then build an image-level binary manifest and evaluate:
+
+```bash
+python scripts/roboflow_ood_manifest.py --root Data/raw/roboflow_dirt --out manifests/ood_roboflow_manifest.csv
+python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manifests/ood_roboflow_manifest.csv --split test
+```
+
+The COCO detection boxes are collapsed to image level: an image is **dirty** if it has
+any Low/High-Dirty box, else **clean** (`scripts/roboflow_ood_manifest.py`). A
+perceptual-hash check confirmed **0 / 2,485** near-duplicates against the training
+data (leak-free). Result: **0.955 F1 / MCC 0.838** — see `reports/results.md`.
+
 ## Segmentation dataset (soiling coverage)
 
 | Purpose | Dataset | Access | Notes |

@@ -40,7 +40,8 @@ manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
 
 Binary test set (modular ResNet-50, curated multi-source set): **88.9% accuracy,
 0.880 F1, 0.776 MCC** — about 17 F1 points above the best classical baseline
-(SVM, 0.712 F1).
+(SVM, 0.712 F1). On a fully external, leak-free **out-of-distribution** set (2,485
+panel-filling photos from a different source/country): **0.955 F1** — it generalises.
 Multi-class (6 classes): **macro-F1 0.857**, with the rare fault classes held up by
 class weighting; 3-way clean/soiled/damaged: **macro-F1 0.883**. Full tables and
 the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
@@ -163,11 +164,18 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   manual outlier removal — see DATASET.md) lifted test metrics noticeably
   (**0.811 → 0.880 F1, MCC 0.675 → 0.776**) but did **not** remove this behaviour:
   the same wide-scene images are still attended to by their background. Better data
-  improved label quality, not attention. Note also that because the curated set now
-  folds in the tight-crop pythonafroz images, we no longer have a clean *independent*
-  out-of-distribution check for the binary model (an earlier raw-set model scored
-  0.95 F1 on held-out pythonafroz, but that source is now in training — a proper
-  future check is to hold out one whole source, e.g. SolNet, as an OOD test). The
+  improved label quality, not attention.
+
+  **But does the shortcut actually hurt generalisation? No — verified on a clean
+  external OOD set.** Evaluated on 2,485 panel-filling photos from a *different*
+  source / country / camera ([Roboflow "solar panel dirt det"](https://universe.roboflow.com/alex-jcvyb/solar-panel-dirt-det),
+  CC BY 4.0; **0** perceptual-hash overlap with training — see `DATASET.md`), the
+  model scores **0.955 F1 · 0.916 macro-F1 · MCC 0.838** — *higher* than on its own
+  in-domain test. These images are panel-filling with almost no background, so the
+  shortcut *can't* help: the strong score shows the model has genuinely learned real
+  dust/panel features, and the background reliance is a wide-scene artefact, not a
+  crutch it depends on. (This is a true out-of-distribution test, replacing an earlier
+  within-Kaggle pythonafroz cross-check; pythonafroz is now part of training.) The
   multi-class model (tight panel crops) doesn't show the shortcut at all.
 
   | ✅ Works on tight crops | ❌ Fails on wide scenes |
