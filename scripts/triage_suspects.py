@@ -106,6 +106,22 @@ def _ocr_reader():
     return easyocr.Reader(["en"], gpu=False, verbose=False)
 
 
+def _ocr_has_text(reader, path, max_dim=1000, min_conf=0.4):
+    """True if OCR finds confident text. Downscales first for speed (watermarks
+    are large enough to survive). Returns the detected strings too."""
+    import numpy as np  # noqa: PLC0415
+
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        scale = max_dim / max(im.size)
+        if scale < 1:
+            im = im.resize((int(im.width * scale), int(im.height * scale)))
+        arr = np.asarray(im)
+    results = reader.readtext(arr, detail=1, canvas_size=max_dim, mag_ratio=1.0)
+    texts = [t for _, t, c in results if c >= min_conf and len(t.strip()) >= 2]
+    return texts
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Triage likely-bad images for manual review.")
     ap.add_argument("--model", required=True)
@@ -116,6 +132,9 @@ def main(argv=None):
     ap.add_argument("--uncertain-thresh", type=float, default=0.60)
     ap.add_argument("--phash-dist", type=int, default=6)
     ap.add_argument("--ocr", action="store_true", help="Flag text/watermarks via easyocr.")
+    ap.add_argument("--ocr-skip-source", default="",
+                    help="Comma-separated source codenames to skip for OCR "
+                         "(e.g. clean sources like solnet_001,solnet_002).")
     ap.add_argument("--repo-root", default=".")
     args = ap.parse_args(argv)
 
@@ -127,6 +146,8 @@ def main(argv=None):
     df = pd.read_csv(args.manifest)
     paths = df["filepath"].tolist()
     labels = df["label"].tolist()
+    sources = df["source"].tolist() if "source" in df.columns else [""] * len(df)
+    skip_ocr = {s.strip() for s in args.ocr_skip_source.split(",") if s.strip()}
 
     preds, confs = _model_scores(model, bundle, paths, repo_root, device)
     dupes = _phash_dupes(paths, repo_root, args.phash_dist)
@@ -134,7 +155,7 @@ def main(argv=None):
     reader = _ocr_reader() if args.ocr else None
 
     rows = []
-    for p, lab, pred, conf in zip(paths, labels, preds, confs):
+    for p, lab, src, pred, conf in zip(paths, labels, sources, preds, confs):
         pred_name = classes[pred] if 0 <= pred < len(classes) else "UNREADABLE"
         reasons = []
         if pred_name == "UNREADABLE":
@@ -146,16 +167,20 @@ def main(argv=None):
                 reasons.append("model_uncertain")
         if p in dupes:
             reasons.append("near_duplicate")
-        if reader is not None:
+        ocr_text = ""
+        if reader is not None and src not in skip_ocr:
             try:
-                if reader.readtext(str(repo_root / p), detail=0):
+                texts = _ocr_has_text(reader, repo_root / p)
+                if texts:
                     reasons.append("has_text")
+                    ocr_text = " | ".join(texts)[:120]
             except Exception:
                 pass
         if reasons:
             rows.append(
                 {"filepath": p, "label": lab, "pred": pred_name,
                  "confidence": round(conf, 3), "reasons": ";".join(reasons),
+                 "ocr_text": ocr_text,
                  "near_dupe_of": dupes.get(p, [""])[0] if p in dupes else ""}
             )
 
