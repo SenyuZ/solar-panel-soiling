@@ -36,3 +36,6 @@ env/
 Thumbs.db
 
 # Keep committed: manifests/ (metadata only), reports/ (figures + results), DATASET.md
+
+# Triage review folder (copies of data images for manual curation)
+/reports/review/
