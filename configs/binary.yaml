@@ -1,6 +1,9 @@
 # Binary clean-vs-dirty baseline — the modular port of the original notebook.
+# Trained on the CURATED multi-source set (Kaggle Dust-Detection + pythonafroz +
+# SolNet 001/002), de-duplicated (SHA-256 + perceptual hash) and manually
+# outlier-filtered. See DATASET.md. Provenance is tagged per-image in the manifest.
 task: binary                       # label space: binary | condition | multiclass
-data_root: Data                    # image root (subfolders Clean/ Dusty/)
+data_root: Data/curated            # image root (subfolders Clean/ Dusty/)
 manifest: manifests/binary_manifest.csv
 
 # Input / loading
@@ -21,7 +24,7 @@ lr_finetune: 5.0e-5
 weight_decay: 0.0
 step_size: 7                       # StepLR
 gamma: 0.1
-use_class_weights: true            # weighted CE for the ~1.4:1 clean:dirty imbalance
+use_class_weights: true            # weighted CE for the ~1.2:1 clean:dirty imbalance
 patience: 5                        # early stopping on val loss
 
 # Reproducibility / output

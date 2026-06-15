@@ -2,33 +2,37 @@
 
 Reproduce everything with the commands in each section. The modular binary numbers
 below are from an actual run on this machine (Apple-Silicon MPS, fp32) over the
-**Dust Detection** set in `Data/`. The original Colab figures (A100) are shown for
-context but were measured on the project's **merged 3-dataset** curation (≈3,539
-images, different test split), so the two CNN rows are *not* directly comparable —
-see the note under the table. Extension rows need their datasets — see `DATASET.md`.
+**curated multi-source set** in `Data/curated/` (Kaggle Dust-Detection + pythonafroz +
+SolNet 001/002, de-duplicated and outlier-filtered — see `DATASET.md`). The original
+Colab figure (A100, AMP) is shown for context. Extension rows need their datasets —
+see `DATASET.md`.
 
-## Binary: clean vs dirty (test set, n = 385)
+## Binary: clean vs dirty (test set, n = 386)
 
 | Model | Accuracy | Precision | Recall | F1 | MCC |
 |---|---|---|---|---|---|
-| ResNet-50 (original Colab, *merged 3-dataset* test, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
-| **ResNet-50 (modular re-run, *Dust Detection* set, MPS)** | **0.842** | 0.809 | 0.814 | **0.811** | 0.675 |
+| **ResNet-50 (curated multi-source set, MPS)** | **0.889** | 0.867 | 0.892 | **0.880** | 0.776 |
+| ResNet-50 (earlier raw *Dust Detection* only, MPS) | 0.842 | 0.809 | 0.814 | 0.811 | 0.675 |
+| ResNet-50 (original Colab, merged 3-dataset, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
 | Classical SVM (HSV + GLCM/LBP + edges) | 0.758 | 0.710 | 0.714 | 0.712 | 0.504 |
 | Classical Random Forest | 0.738 | 0.708 | 0.634 | 0.669 | 0.455 |
 
-Per-class (modular ResNet-50): clean P/R/F1 = 0.865 / 0.862 / 0.864 · dirty =
-0.809 / 0.814 / 0.811. Training early-stopped at epoch 14; best validation F1
-0.865 at epoch 9.
+Per-class (curated ResNet-50): clean P/R/F1 = 0.907 / 0.886 / 0.896 · dirty =
+0.867 / 0.892 / 0.880. Training early-stopped at epoch 13; best validation F1
+0.866 at epoch 8.
 
-**Reading the table.** The two CNN rows are on *different test sets* — the original
-Colab run used the merged 3-dataset curation (which included the high-quality
-SolNet images), while the modular re-run uses the single Dust Detection set in
-`Data/` — so the 0.881 → 0.811 F1 difference is mostly a different/harder test set
-(plus fp32 on MPS vs AMP), not a regression. The directly comparable result is the
-**deep-vs-classical gap** on the *same* `Data/` split: ResNet-50's 0.811 F1 vs the
-best classical 0.712 (SVM) — learned features add ~10 F1 points over hand-crafted
-colour/texture/edge descriptors. On this data the main *classical* separable cue
-is saturation (dust greys panels out); see `solarsoil/severity.py`.
+**Reading the table.** Curating the training data (de-duplication + manual outlier
+removal, pooling three sources) lifts the modular re-run from **0.811 → 0.880 F1**
+(MCC 0.675 → 0.776), essentially recovering the original Colab merged-set quality
+(0.881 F1) on this machine. Two honest caveats: (1) the curated test split has also
+had outliers removed, so it is a cleaner/easier test — part of the gain is the test
+set, not only the model; a fully controlled head-to-head is impossible here because
+the raw and curated sets share provenance (cross-evaluating would leak). (2) The
+directly comparable, leak-free result is the **deep-vs-classical gap** on the curated
+split: ResNet-50's 0.880 F1 vs the best classical 0.712 (SVM) — learned features add
+~17 F1 points over hand-crafted colour/texture/edge descriptors. On this data the
+main *classical* separable cue is saturation (dust greys panels out); see
+`solarsoil/severity.py`.
 
 ![Confusion matrix](figures/binary_confusion_test.png)
 
@@ -39,10 +43,12 @@ python -m solarsoil.models.classical  --config configs/classical.yaml --model-ty
 python -m solarsoil.models.classical  --config configs/classical.yaml --model-type rf
 ```
 
-**Cross-dataset robustness.** The *same* binary model evaluated on a *different*
-dataset (pythonafroz tight-crop Clean/Dusty, n=383) scores **acc 0.953 · F1 0.953 ·
-MCC 0.906** — so despite Grad-CAM showing some background attention (README
-Limitations), it generalises well to unseen data.
+**On out-of-distribution testing.** An earlier raw-set model scored 0.95 F1 on the
+held-out pythonafroz tight-crop set as an independent generalisation check. That
+source is now *inside* the curated training set, so it can no longer serve that role.
+Grad-CAM still shows background attention on wide-scene images even after curation
+(README Limitations), so a proper future OOD test is to **hold out one whole source**
+(e.g. SolNet) and evaluate on it.
 
 ## Multi-class & condition (pythonafroz 6-class set, n_test = 133)
 

@@ -8,29 +8,31 @@
 Provenance below is taken from the original Team 7 project report (UTS, *Image
 Processing and Pattern Recognition*, Assignment 2, Oct 2025).
 
-## Binary set shipped with this repo (`Data/`)
+## Binary training set (`Data/curated/`) — curated, multi-source
 
-The `Data/Clean` (1,493) + `Data/Dusty` (1,069) = **2,562** images in this repo are
-the **Kaggle Solar Panel Dust Detection** dataset (raw, before the report's
-outlier curation):
+The binary clean/dirty model is trained on a **curated, de-duplicated multi-source
+set**: **1,403 clean / 1,168 dirty = 2,571** images pooled from three public sources,
+de-duplicated (SHA-256 + perceptual hash) and **manually outlier-filtered**. Per-image
+provenance is recorded in the `source` column of `manifests/binary_manifest.csv`:
 
-- Garladinne, H. S. (2022). *Solar Panel dust detection* [dataset]. Kaggle.
-  https://www.kaggle.com/datasets/hemanthsai7/solar-panel-dust-detection
-
-## Full multi-source pipeline (the original project)
-
-The project's "multiple datasets" pipeline merged **three** public sources
-(referenced by codename in the notebook) and de-duplicated them (SHA-256 +
-perceptual hash) into a curated binary set of **3,539** images.
-
-| # | Dataset | Codename(s) | Link | Curated counts |
+| # | Dataset | Codename(s) | Link | Images in curated set |
 |---|---|---|---|---|
-| 1 | Kaggle **Solar Panel Dust Detection** (Garladinne, 2022) | `detect_solar_dust` | [kaggle.com/…/hemanthsai7/solar-panel-dust-detection](https://www.kaggle.com/datasets/hemanthsai7/solar-panel-dust-detection) | 1,358 clean / 878 dirty |
-| 2 | Kaggle **Solar Panel Images** (pythonafroz) | `faulty_solar_panel` | [kaggle.com/…/pythonafroz/solar-panel-images](https://www.kaggle.com/datasets/pythonafroz/solar-panel-images) | 87 clean / 85 dirty |
-| 3 | **SolNet** dataset (Onim et al., 2023; photos from Bangladesh) | `solnet_001`, `solnet_002` | [mdpi.com/1996-1073/16/1/155](https://www.mdpi.com/1996-1073/16/1/155) · [code](https://github.com/Onimee58/SolNET) | 279+389 clean / 380+83 dirty |
+| 1 | Kaggle **Solar Panel Dust Detection** (Garladinne, 2022) | `detect_solar_dust` | [kaggle.com/…/hemanthsai7/solar-panel-dust-detection](https://www.kaggle.com/datasets/hemanthsai7/solar-panel-dust-detection) | 2,004 |
+| 2 | Kaggle **Solar Panel Images** (pythonafroz) | `faulty_solar_panel` | [kaggle.com/…/pythonafroz/solar-panel-images](https://www.kaggle.com/datasets/pythonafroz/solar-panel-images) | 171 |
+| 3 | **SolNet** (Onim et al., 2023; photos from Bangladesh) | `solnet_001`, `solnet_002` | [mdpi.com/1996-1073/16/1/155](https://www.mdpi.com/1996-1073/16/1/155) · [code](https://github.com/Onimee58/SolNET) | 207 + 189 = 396 |
 
-(Per-source counts are the de-duplicated curation reported by Team 7; raw totals
-were larger.)
+> **Reproducibility & redistribution.** Images are not redistributed. De-duplication
+> is scripted (`solarsoil.data.dedup`); the final manual outlier removal is *not*, so
+> the exact membership is pinned by the committed `manifests/binary_manifest.csv`
+> rather than regenerable from scratch. (The original Team 7 report described a larger
+> ~3,539-image curation pass; the set used here is a tighter ~2,571-image re-curation.)
+
+> **Earlier raw baseline (for comparison).** A previous version trained only on the
+> raw Kaggle Dust-Detection set (1,493 clean / 1,069 dirty = 2,562, *before* curation)
+> and scored 0.811 F1 / 0.675 MCC. Switching to the curated multi-source set above
+> raised this to **0.880 F1 / 0.776 MCC** — see README. Note this also folds the
+> tight-crop pythonafroz source into training, so it can no longer serve as an
+> independent out-of-distribution test for the binary model.
 
 ### Note for the multi-class extension
 Source #2, Kaggle **Solar Panel Images** (pythonafroz), is *natively a 6-class*

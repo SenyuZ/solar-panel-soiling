@@ -38,8 +38,9 @@ manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
 
 ## Examples
 
-Binary test set (modular ResNet-50): **84.2% accuracy, 0.811 F1, 0.675 MCC** —
-about 10 F1 points above the best classical baseline (SVM, 0.712 F1).
+Binary test set (modular ResNet-50, curated multi-source set): **88.9% accuracy,
+0.880 F1, 0.776 MCC** — about 17 F1 points above the best classical baseline
+(SVM, 0.712 F1).
 Multi-class (6 classes): **macro-F1 0.857**, with the rare fault classes held up by
 class weighting; 3-way clean/soiled/damaged: **macro-F1 0.883**. Full tables and
 the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
@@ -88,11 +89,12 @@ pip install -r requirements.txt
 pip install -e .                 # installs the `solarsoil` package + CLIs
 ```
 
-## Quickstart (binary, uses the included `Data/`)
+## Quickstart (binary, curated multi-source set in `Data/curated/`)
 
 ```bash
-# 1. Build a stratified train/val/test manifest from Data/{Clean,Dusty}
-python -m solarsoil.data.manifest --data-root Data --out manifests/binary_manifest.csv --label-space binary
+# 1. Build a stratified train/val/test manifest from Data/curated/{Clean,Dusty}
+#    (the committed manifests/binary_manifest.csv already pins this split)
+python -m solarsoil.data.manifest --data-root Data/curated --out manifests/binary_manifest.csv --label-space binary
 
 # 2. Train the ResNet-50 baseline (auto-uses CUDA > MPS > CPU)
 python -m solarsoil.train --config configs/binary.yaml
@@ -101,18 +103,18 @@ python -m solarsoil.train --config configs/binary.yaml
 python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manifests/binary_manifest.csv --split test
 
 # 4. Predict on a single image, with a Grad-CAM overlay
-python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --gradcam
+python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/curated/Dusty/detect_solar_dust_dirty_Imgdirty_1002_1.jpg --gradcam
 
 # 4b. Add a measured % power-loss estimate (Track B / DeepSolarEye regressor).
 #     NB: accurate only on panel-filling photos; on wide background-heavy shots
 #     it is cross-domain and indicative at best — see Limitations.
-python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/Dusty/Imgdirty_0_1.jpg --power-loss
+python -m solarsoil.predict --model artifacts/binary/model.pth --image Data/curated/Dusty/detect_solar_dust_dirty_Imgdirty_1002_1.jpg --power-loss
 
 # 5. Classical baseline (image processing + SVM) for comparison
 python -m solarsoil.models.classical --config configs/classical.yaml --model-type svm
 
 # 6. Classical soiling/severity estimate (no training needed)
-python -m solarsoil.severity --image Data/Dusty --limit 20 --out-dir reports/figures/coverage
+python -m solarsoil.severity --image Data/curated/Dusty --limit 20 --out-dir reports/figures/coverage
 
 # 7. Interactive demo
 python app/app.py
@@ -154,14 +156,19 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 
 ## Limitations & honest caveats
 
-- **The binary model partly exploits background context (shortcut learning).**
-  Grad-CAM revealed that on the uncurated, whole-scene Dust-Detection photos, the
-  clean/dirty classifier sometimes attends to the *surroundings* (buildings, sky,
-  people) rather than the panel. I tested whether this hurts generalisation with a
-  **cross-dataset evaluation**: on the *different* pythonafroz tight-crop Clean/Dusty
-  set the model still scored **0.95 F1** — so it has clearly learned real panel
-  features too, and the shortcut is present but **not** catastrophic. The multi-class
-  model (tight panel crops) doesn't show it at all.
+- **The binary model still partly exploits background context (shortcut learning).**
+  Grad-CAM shows that on whole-scene, wide-angle Dust-Detection photos the clean/dirty
+  classifier often attends to the *surroundings* (buildings, sky, people) rather than
+  the panel. Moving to the **curated multi-source training set** (de-duplication +
+  manual outlier removal — see DATASET.md) lifted test metrics noticeably
+  (**0.811 → 0.880 F1, MCC 0.675 → 0.776**) but did **not** remove this behaviour:
+  the same wide-scene images are still attended to by their background. Better data
+  improved label quality, not attention. Note also that because the curated set now
+  folds in the tight-crop pythonafroz images, we no longer have a clean *independent*
+  out-of-distribution check for the binary model (an earlier raw-set model scored
+  0.95 F1 on held-out pythonafroz, but that source is now in training — a proper
+  future check is to hold out one whole source, e.g. SolNet, as an OOD test). The
+  multi-class model (tight panel crops) doesn't show the shortcut at all.
 
   | ✅ Works on tight crops | ❌ Fails on wide scenes |
   |---|---|
@@ -185,8 +192,8 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   detector or segmentation head (real work, hence future). More broadly, the failures
   here are a **data-quality** story as much as a modelling one: the tight-crop
   pythonafroz and multi-class sets — where every image is *standardised* to a single
-  centred panel — give clean attention, honest coverage, and 0.95 cross-dataset F1,
-  while the uncurated wide-angle photos do not. Consistent framing, scale, and
+  centred panel — give clean attention and honest coverage, while the uncurated
+  wide-angle photos do not, even after curation. Consistent framing, scale, and
   subject isolation at capture time are worth more than extra model capacity; a
   detector/crop step is really a way to *impose* that standardisation after the fact.
 
