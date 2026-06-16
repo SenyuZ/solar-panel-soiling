@@ -39,3 +39,4 @@ Thumbs.db
 
 # Triage review folder (copies of data images for manual curation)
 /reports/review/
+/reports/ocr_cache.tsv

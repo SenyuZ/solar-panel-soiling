@@ -135,6 +135,9 @@ def main(argv=None):
     ap.add_argument("--ocr-skip-source", default="",
                     help="Comma-separated source codenames to skip for OCR "
                          "(e.g. clean sources like solnet_001,solnet_002).")
+    ap.add_argument("--ocr-cache", default="reports/ocr_cache.tsv",
+                    help="Resumable per-image OCR cache (survives interruptions). "
+                         "Delete it to force a fresh OCR pass.")
     ap.add_argument("--repo-root", default=".")
     args = ap.parse_args(argv)
 
@@ -154,8 +157,22 @@ def main(argv=None):
 
     reader = _ocr_reader() if args.ocr else None
 
+    # Resumable OCR cache: "<filepath>\t<text>" per line ("" text = checked, no text).
+    # Written/flushed per image so a kill (laptop sleep) only loses the current image.
+    ocr_cache: dict[str, str] = {}
+    cache_fh = None
+    if reader is not None:
+        cache_path = Path(args.ocr_cache)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        if cache_path.exists():
+            for line in cache_path.read_text().splitlines():
+                fp, _, txt = line.partition("\t")
+                ocr_cache[fp] = txt
+            print(f"Loaded {len(ocr_cache)} cached OCR results from {cache_path}")
+        cache_fh = open(cache_path, "a")
+
     rows = []
-    for p, lab, src, pred, conf in zip(paths, labels, sources, preds, confs):
+    for i, (p, lab, src, pred, conf) in enumerate(zip(paths, labels, sources, preds, confs)):
         pred_name = classes[pred] if 0 <= pred < len(classes) else "UNREADABLE"
         reasons = []
         if pred_name == "UNREADABLE":
@@ -169,13 +186,20 @@ def main(argv=None):
             reasons.append("near_duplicate")
         ocr_text = ""
         if reader is not None and src not in skip_ocr:
-            try:
-                texts = _ocr_has_text(reader, repo_root / p)
-                if texts:
-                    reasons.append("has_text")
-                    ocr_text = " | ".join(texts)[:120]
-            except Exception:
-                pass
+            if p in ocr_cache:
+                ocr_text = ocr_cache[p]
+            else:
+                try:
+                    texts = _ocr_has_text(reader, repo_root / p)
+                    ocr_text = " | ".join(texts)[:120] if texts else ""
+                except Exception:
+                    ocr_text = ""
+                cache_fh.write(f"{p}\t{ocr_text}\n")
+                cache_fh.flush()
+                if (i + 1) % 100 == 0:
+                    print(f"  OCR progress: {i + 1}/{len(paths)}", flush=True)
+            if ocr_text:
+                reasons.append("has_text")
         if reasons:
             rows.append(
                 {"filepath": p, "label": lab, "pred": pred_name,
@@ -183,6 +207,9 @@ def main(argv=None):
                  "ocr_text": ocr_text,
                  "near_dupe_of": dupes.get(p, [""])[0] if p in dupes else ""}
             )
+
+    if cache_fh is not None:
+        cache_fh.close()
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
