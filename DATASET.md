@@ -11,28 +11,38 @@ Processing and Pattern Recognition*, Assignment 2, Oct 2025).
 ## Binary training set (`Data/curated/`) — curated, multi-source
 
 The binary clean/dirty model is trained on a **curated, de-duplicated multi-source
-set**: **1,403 clean / 1,168 dirty = 2,571** images pooled from three public sources,
-de-duplicated (SHA-256 + perceptual hash) and **manually outlier-filtered**. Per-image
-provenance is recorded in the `source` column of `manifests/binary_manifest.csv`:
+set**: **1,305 clean / 1,015 dirty = 2,320** images pooled from three public sources,
+de-duplicated (SHA-256 + perceptual hash), **manually outlier-filtered**, and then
+**watermark- and near-duplicate-cleaned** (see below). Per-image provenance is recorded
+in the `source` column of `manifests/binary_manifest.csv`:
 
-| # | Dataset | Codename(s) | Link | Images in curated set |
+| # | Dataset | Codename(s) | Link | Images in final set |
 |---|---|---|---|---|
-| 1 | Kaggle **Solar Panel Dust Detection** (Garladinne, 2022) | `detect_solar_dust` | [kaggle.com/…/hemanthsai7/solar-panel-dust-detection](https://www.kaggle.com/datasets/hemanthsai7/solar-panel-dust-detection) | 2,004 |
-| 2 | Kaggle **Solar Panel Images** (pythonafroz) | `faulty_solar_panel` | [kaggle.com/…/pythonafroz/solar-panel-images](https://www.kaggle.com/datasets/pythonafroz/solar-panel-images) | 171 |
-| 3 | **SolNet** (Onim et al., 2023; photos from Bangladesh) | `solnet_001`, `solnet_002` | [mdpi.com/1996-1073/16/1/155](https://www.mdpi.com/1996-1073/16/1/155) · [code](https://github.com/Onimee58/SolNET) | 207 + 189 = 396 |
+| 1 | Kaggle **Solar Panel Dust Detection** (Garladinne, 2022) | `detect_solar_dust` | [kaggle.com/…/hemanthsai7/solar-panel-dust-detection](https://www.kaggle.com/datasets/hemanthsai7/solar-panel-dust-detection) | 1,786 |
+| 2 | Kaggle **Solar Panel Images** (pythonafroz) | `faulty_solar_panel` | [kaggle.com/…/pythonafroz/solar-panel-images](https://www.kaggle.com/datasets/pythonafroz/solar-panel-images) | 157 |
+| 3 | **SolNet** (Onim et al., 2023; photos from Bangladesh) | `solnet_001`, `solnet_002` | [mdpi.com/1996-1073/16/1/155](https://www.mdpi.com/1996-1073/16/1/155) · [code](https://github.com/Onimee58/SolNET) | 203 + 174 = 377 |
+
+> **Watermark + duplicate cleaning.** An OCR/triage pass (`scripts/triage_suspects.py
+> --ocr`) flagged **186 images carrying tiled stock-photo watermarks** (Shutterstock,
+> Dreamstime, Alibaba) — a spurious cue present on both classes (113 dirty / 73 clean).
+> These were removed, along with **65 near-duplicates** (pHash Hamming ≤ 6), taking the
+> set from 2,571 → **2,320**. This *lowered* the in-domain test F1 (0.880 → 0.821):
+> the watermarked images had been making the benchmark artificially easy. External OOD
+> performance was unaffected (see `reports/results.md`).
 
 > **Reproducibility & redistribution.** Images are not redistributed. De-duplication
-> is scripted (`solarsoil.data.dedup`); the final manual outlier removal is *not*, so
-> the exact membership is pinned by the committed `manifests/binary_manifest.csv`
-> rather than regenerable from scratch. (The original Team 7 report described a larger
-> ~3,539-image curation pass; the set used here is a tighter ~2,571-image re-curation.)
+> is scripted (`solarsoil.data.dedup`); the manual outlier + watermark removal is *not*
+> fully scripted, so the exact membership is pinned by the committed
+> `manifests/binary_manifest.csv` rather than regenerable from scratch. (The original
+> Team 7 report described a larger ~3,539-image curation pass; the set used here is a
+> tighter ~2,320-image re-curation.)
 
 > **Earlier raw baseline (for comparison).** A previous version trained only on the
 > raw Kaggle Dust-Detection set (1,493 clean / 1,069 dirty = 2,562, *before* curation)
-> and scored 0.811 F1 / 0.675 MCC. Switching to the curated multi-source set above
-> raised this to **0.880 F1 / 0.776 MCC** — see README. Note this also folds the
-> tight-crop pythonafroz source into training, so it can no longer serve as an
-> independent out-of-distribution test for the binary model.
+> and scored 0.811 F1 / 0.675 MCC. The curated+cleaned multi-source set scores
+> **0.821 F1 / 0.696 MCC** in-domain but generalises far better out-of-distribution
+> (**0.952 F1**, see below). Note pythonafroz is now folded into training, so it can no
+> longer serve as an independent OOD test — the external Roboflow set does instead.
 
 ### Note for the multi-class extension
 Source #2, Kaggle **Solar Panel Images** (pythonafroz), is *natively a 6-class*
@@ -75,7 +85,7 @@ python -m solarsoil.evaluate --model artifacts/binary/model.pth --manifest manif
 The COCO detection boxes are collapsed to image level: an image is **dirty** if it has
 any Low/High-Dirty box, else **clean** (`scripts/roboflow_ood_manifest.py`). A
 perceptual-hash check confirmed **0 / 2,485** near-duplicates against the training
-data (leak-free). Result: **0.955 F1 / MCC 0.838** — see `reports/results.md`.
+data (leak-free). Result: **0.952 F1 / MCC 0.835** — see `reports/results.md`.
 
 ## Segmentation dataset (soiling coverage)
 

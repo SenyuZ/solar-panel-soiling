@@ -38,10 +38,11 @@ manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
 
 ## Examples
 
-Binary test set (modular ResNet-50, curated multi-source set): **88.9% accuracy,
-0.880 F1, 0.776 MCC** — about 17 F1 points above the best classical baseline
-(SVM, 0.712 F1). On a fully external, leak-free **out-of-distribution** set (2,485
-panel-filling photos from a different source/country): **0.955 F1** — it generalises.
+Binary test set (modular ResNet-50, curated multi-source set, watermarks removed):
+**85.1% accuracy, 0.821 F1, 0.696 MCC** — about 11 F1 points above the best classical
+baseline (SVM, 0.712 F1). On a fully external, leak-free **out-of-distribution** set
+(2,485 panel-filling photos from a different source/country): **0.952 F1** — it
+generalises far better than the in-domain number alone suggests.
 Multi-class (6 classes): **macro-F1 0.857**, with the rare fault classes held up by
 class weighting; 3-way clean/soiled/damaged: **macro-F1 0.883**. Full tables and
 the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
@@ -160,18 +161,20 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 - **The binary model still partly exploits background context (shortcut learning).**
   Grad-CAM shows that on whole-scene, wide-angle Dust-Detection photos the clean/dirty
   classifier often attends to the *surroundings* (buildings, sky, people) rather than
-  the panel. Moving to the **curated multi-source training set** (de-duplication +
-  manual outlier removal — see DATASET.md) lifted test metrics noticeably
-  (**0.811 → 0.880 F1, MCC 0.675 → 0.776**) but did **not** remove this behaviour:
-  the same wide-scene images are still attended to by their background. Better data
-  improved label quality, not attention.
+  the panel. An OCR audit (`scripts/triage_suspects.py`) also found **186 images (~7%)
+  carrying tiled stock-photo watermarks** (Shutterstock/Dreamstime) — another spurious
+  cue — which were removed along with near-duplicates (see DATASET.md). Tellingly,
+  removing the watermarks *lowered* the in-domain score (**0.880 → 0.821 F1**): they had
+  been making the benchmark artificially easy. The wide-scene background attention
+  persists in Grad-CAM even after cleaning.
 
-  **But does the shortcut actually hurt generalisation? No — verified on a clean
+  **But does any of this actually hurt real generalisation? No — verified on a clean
   external OOD set.** Evaluated on 2,485 panel-filling photos from a *different*
   source / country / camera ([Roboflow "solar panel dirt det"](https://universe.roboflow.com/alex-jcvyb/solar-panel-dirt-det),
   CC BY 4.0; **0** perceptual-hash overlap with training — see `DATASET.md`), the
-  model scores **0.955 F1 · 0.916 macro-F1 · MCC 0.838** — *higher* than on its own
-  in-domain test. These images are panel-filling with almost no background, so the
+  model scores **0.952 F1 · 0.912 macro-F1 · MCC 0.835** — *higher* than on its own
+  (now watermark-free, harder) in-domain test, and essentially unchanged by the
+  cleanup. These images are panel-filling with almost no background, so the
   shortcut *can't* help: the strong score shows the model has genuinely learned real
   dust/panel features, and the background reliance is a wide-scene artefact, not a
   crutch it depends on. (This is a true out-of-distribution test, replacing an earlier

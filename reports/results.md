@@ -7,30 +7,31 @@ SolNet 001/002, de-duplicated and outlier-filtered — see `DATASET.md`). The or
 Colab figure (A100, AMP) is shown for context. Extension rows need their datasets —
 see `DATASET.md`.
 
-## Binary: clean vs dirty (test set, n = 386)
+## Binary: clean vs dirty (test set, n = 348)
 
 | Model | Accuracy | Precision | Recall | F1 | MCC |
 |---|---|---|---|---|---|
-| **ResNet-50 (curated multi-source set, MPS)** | **0.889** | 0.867 | 0.892 | **0.880** | 0.776 |
+| **ResNet-50 (curated multi-source, watermarks removed, MPS)** | **0.851** | 0.862 | 0.783 | **0.821** | 0.696 |
+| ResNet-50 (curated *with* watermarks, MPS) | 0.889 | 0.867 | 0.892 | 0.880 | 0.776 |
 | ResNet-50 (earlier raw *Dust Detection* only, MPS) | 0.842 | 0.809 | 0.814 | 0.811 | 0.675 |
 | ResNet-50 (original Colab, merged 3-dataset, A100) | 0.901 | 0.854 | 0.908 | 0.881 | 0.797 |
 | Classical SVM (HSV + GLCM/LBP + edges) | 0.758 | 0.710 | 0.714 | 0.712 | 0.504 |
 | Classical Random Forest | 0.738 | 0.708 | 0.634 | 0.669 | 0.455 |
 
-Per-class (curated ResNet-50): clean P/R/F1 = 0.907 / 0.886 / 0.896 · dirty =
-0.867 / 0.892 / 0.880. Training early-stopped at epoch 13; best validation F1
-0.866 at epoch 8.
+Per-class (cleaned curated ResNet-50): clean P/R/F1 = 0.843 / 0.903 / 0.872 · dirty =
+0.862 / 0.783 / 0.821. Training early-stopped at epoch 12.
 
-**Reading the table.** Curating the training data (de-duplication + manual outlier
-removal, pooling three sources) lifts the modular re-run from **0.811 → 0.880 F1**
-(MCC 0.675 → 0.776), essentially recovering the original Colab merged-set quality
-(0.881 F1) on this machine. Two honest caveats: (1) the curated test split has also
-had outliers removed, so it is a cleaner/easier test — part of the gain is the test
-set, not only the model; a fully controlled head-to-head is impossible here because
-the raw and curated sets share provenance (cross-evaluating would leak). (2) The
-directly comparable, leak-free result is the **deep-vs-classical gap** on the curated
-split: ResNet-50's 0.880 F1 vs the best classical 0.712 (SVM) — learned features add
-~17 F1 points over hand-crafted colour/texture/edge descriptors. On this data the
+**Reading the table.** This is a data-quality story with an honest twist. Pooling three
+sources into a curated set first showed 0.880 F1 — but an OCR audit
+(`scripts/triage_suspects.py`) found **186 images (~7%) carrying tiled stock-photo
+watermarks** (Shutterstock/Dreamstime), a spurious cue. Removing the watermarks (plus
+65 near-duplicates) **lowered** the in-domain F1 to **0.821**: those easy, watermarked
+images had been inflating the benchmark. So the headline in-domain number is now back
+near the raw-set level (0.811) — *but* that is the **honest, harder** number, and the
+real test is generalisation, where this model is strong (0.952 OOD F1, below). The
+leak-free, directly comparable signal is the **deep-vs-classical gap** on the cleaned
+split: ResNet-50's 0.821 F1 vs the best classical 0.712 (SVM) — learned features still
+add ~11 F1 points over hand-crafted colour/texture/edge descriptors. On this data the
 main *classical* separable cue is saturation (dust greys panels out); see
 `solarsoil/severity.py`.
 
@@ -54,17 +55,20 @@ so this is leak-free.
 
 | Test set | n | Accuracy | F1 (dirty) | Macro-F1 | MCC |
 |---|---|---|---|---|---|
-| In-domain (curated test split) | 386 | 0.889 | 0.880 | 0.888 | 0.776 |
-| **External OOD (Roboflow)** | 2,485 | **0.934** | **0.955** | **0.916** | **0.838** |
+| In-domain (cleaned curated test split) | 348 | 0.851 | 0.821 | 0.846 | 0.696 |
+| **External OOD (Roboflow)** | 2,485 | **0.930** | **0.952** | **0.912** | **0.835** |
 
-Per-class OOD: clean P/R = 0.813 / 0.952 · dirty P/R = 0.984 / 0.929.
+Per-class OOD: clean P/R = 0.787 / 0.980 · dirty P/R = 0.993 / 0.914.
 
-**Why this matters.** The model scores *higher* OOD than in-domain, on images that are
-panel-filling with almost no background — exactly the regime where the
+**Why this matters.** The model scores *much higher* OOD than in-domain, on images that
+are panel-filling with almost no background — exactly the regime where the
 background-shortcut (README Limitations) *cannot* help. This is direct evidence the
 model learned real dust/panel features and generalises across sources; the background
-reliance is a wide-scene artefact, not a crutch. It replaces an earlier within-Kaggle
-pythonafroz cross-check (that source is now part of training).
+reliance is a wide-scene artefact, not a crutch. Notably, removing the in-domain
+watermarks dropped the in-domain F1 (0.880 → 0.821) but left OOD essentially unchanged
+(0.955 → 0.952) — confirming the watermarks were inflating the in-domain number, not
+the model's real ability. This OOD test replaces an earlier within-Kaggle pythonafroz
+cross-check (that source is now part of training).
 
 ```bash
 # Reproduce (needs the Roboflow dataset downloaded to Data/raw/roboflow_dirt — see DATASET.md):
