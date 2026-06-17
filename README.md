@@ -19,8 +19,9 @@ and segmentation, and Grad-CAM explainability — plus an interactive demo.
 > [`DATASET.md`](DATASET.md) for data sources.
 
 **Try it live (no install):** https://huggingface.co/spaces/SenyuZ/solar-panel-soiling
-— drop a panel photo and get the condition, Grad-CAM, soiling overlay, and
-measured power-loss. Hosted on a free CPU Space (first load may take a few
+— drop a panel photo and get the condition, Grad-CAM, the classical soiling
+overlay next to the U-Net dust segmentation (side by side, to compare them), and
+a measured power-loss. Hosted on a free CPU Space (first load may take a few
 seconds to wake). To run the same demo locally: `python app/app.py`.
 
 ---
@@ -35,7 +36,7 @@ seconds to wake). To run the same demo locally: `python app/app.py`.
 | **Severity / coverage** | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
 | **Soiling segmentation** | **ResNet-34 U-Net** (pretrained encoder) → measured dust coverage % + pixel mask | `models.segmentation` |
 | **Explainability** | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
-| **Interactive demo** | drop a photo → prediction + Grad-CAM + soiling overlay + measured power-loss (Track B when available) | `app/app.py` |
+| **Interactive demo** | drop a photo → prediction + Grad-CAM + classical soiling overlay *vs* U-Net segmentation (side by side) + measured power-loss (Track B) | `app/app.py` |
 
 Engineering: config-driven CLIs, fixed seeds, a non-destructive stratified
 manifest split, CUDA/MPS/CPU support, best/last checkpoints, metric history
