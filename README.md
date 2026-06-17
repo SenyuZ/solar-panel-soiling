@@ -18,6 +18,11 @@ and segmentation, and Grad-CAM explainability — plus an interactive demo.
 > a panel's power loss to **MAE ≈ 0.075** (~7.5 percentage points). See
 > [`DATASET.md`](DATASET.md) for data sources.
 
+**Try it live (no install):** https://huggingface.co/spaces/SenyuZ/solar-panel-soiling
+— drop a panel photo and get the condition, Grad-CAM, soiling overlay, and
+measured power-loss. Hosted on a free CPU Space (first load may take a few
+seconds to wake). To run the same demo locally: `python app/app.py`.
+
 ---
 
 ## Highlights

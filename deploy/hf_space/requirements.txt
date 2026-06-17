@@ -1,0 +1,14 @@
+# Hugging Face Space (CPU) dependencies.
+#
+# gradio is provided by the Space SDK itself (see `sdk_version` in README.md),
+# so it is intentionally NOT pinned here to avoid a double install.
+#
+# torch/torchvision are pinned to the versions the checkpoints were saved with
+# and forced to CPU wheels (the `+cpu` build) via the extra index below. The
+# `solarsoil` package (and its other deps: opencv, scikit-image/-learn, pandas,
+# pillow, imagehash, etc.) is installed straight from the public GitHub repo.
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.12.0
+torchvision==0.27.0
+solarsoil @ git+https://github.com/SenyuZ/solar-panel-soiling.git
