@@ -17,7 +17,8 @@ Drop a photo of a photovoltaic panel and get:
 
 - **Condition** — clean vs dirty (ResNet-50 classifier) with class probabilities
 - **Grad-CAM** — a heatmap of where the model looked
-- **Soiling coverage** — a classical image-processing overlay + soiling index
+- **Where is the dirt? — two takes, side by side:** a **classical** image-processing
+  overlay (no ML) next to a **U-Net** ML dust segmentation, so you can compare them
 - **Power loss** — the measured DeepSolarEye Track-B regressor (test MAE ≈ 0.075)
 
 Runs on a free CPU Space, so the first request after the Space wakes from sleep

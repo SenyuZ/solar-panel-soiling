@@ -18,12 +18,17 @@ token on this machine).
 | `packages.txt` | apt packages OpenCV needs (`libgl1`, `libglib2.0-0`) |
 | `README.md` | the Space "card" (title, SDK, version metadata) |
 
-You also upload **two weight files**, which live locally at:
+You also upload **three weight files**, which live locally at:
 
 ```
-artifacts/binary/model.pth      (~90 MB)   -> Space path: artifacts/binary/model.pth
-artifacts/severity/model.pth    (~43 MB)   -> Space path: artifacts/severity/model.pth
+artifacts/binary/model.pth        (~90 MB) -> Space path: artifacts/binary/model.pth
+artifacts/severity/model.pth      (~43 MB) -> Space path: artifacts/severity/model.pth
+artifacts/segmentation/model.pth  (~93 MB) -> Space path: artifacts/segmentation/model.pth
 ```
+
+The segmentation weight powers the ML "U-Net dust segmentation" panel shown next
+to the classical overlay. It's optional — without it the demo just hides that
+panel — but it's what lets reviewers compare the classical vs ML approach.
 
 > These weights become publicly downloadable on the Space. That's expected for a
 > public demo.
@@ -56,9 +61,10 @@ cp /Users/senyuzhu/Uni/code/projects/solar_panels/deploy/hf_space/{app.py,requir
 # 3. Add the weights via Git LFS:
 git lfs install
 git lfs track "*.pth"
-mkdir -p artifacts/binary artifacts/severity
-cp /Users/senyuzhu/Uni/code/projects/solar_panels/artifacts/binary/model.pth   artifacts/binary/
-cp /Users/senyuzhu/Uni/code/projects/solar_panels/artifacts/severity/model.pth artifacts/severity/
+mkdir -p artifacts/binary artifacts/severity artifacts/segmentation
+cp /Users/senyuzhu/Uni/code/projects/solar_panels/artifacts/binary/model.pth       artifacts/binary/
+cp /Users/senyuzhu/Uni/code/projects/solar_panels/artifacts/severity/model.pth     artifacts/severity/
+cp /Users/senyuzhu/Uni/code/projects/solar_panels/artifacts/segmentation/model.pth artifacts/segmentation/
 
 git add .gitattributes app.py requirements.txt packages.txt README.md artifacts
 git commit -m "Solar panel soiling demo"
