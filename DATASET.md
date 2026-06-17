@@ -30,6 +30,18 @@ in the `source` column of `manifests/binary_manifest.csv`:
 > the watermarked images had been making the benchmark artificially easy. External OOD
 > performance was unaffected (see `reports/results.md`).
 
+> **Curation is improved but not finished (future work).** Inconsistent images were
+> removed both **by hand** (manual outlier filtering) and with **tooling** — the
+> OCR/triage pass above plus perceptual-hash de-duplication. Even so, **many
+> inconsistent images remain** in the pooled multi-source set: mixed framing and
+> scale, wide-angle whole-scene photos where the panel is only a small subject,
+> off-subject or low-quality shots, and likely residual near-duplicates across the
+> three sources. This lack of standardisation is a known contributor to the
+> wide-scene failures documented in the README's Limitations. A further round of
+> **cleaning, sorting and standardising** the set — tighter framing, dropping
+> off-distribution and duplicate images — is future work that should improve both
+> training and the honesty of the in-domain benchmark.
+
 > **Reproducibility & redistribution.** Images are not redistributed. De-duplication
 > is scripted (`solarsoil.data.dedup`); the manual outlier + watermark removal is *not*
 > fully scripted, so the exact membership is pinned by the committed

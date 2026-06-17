@@ -226,6 +226,19 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   would give less blobby, multi-region maps but remain bounded by the conv
   resolution.
 
+- **Locating the dirt is still approximate — for *both* methods, and they disagree.**
+  The demo deliberately shows the classical Track-A soiling overlay and the U-Net
+  dust segmentation **side by side**, because neither is optimal. The classical
+  overlay keys on desaturation (an unsupervised heuristic); the U-Net was trained on
+  ~1,600 masks and reaches only **test Dice 0.47 / IoU 0.38**. In many images the two
+  **disagree and are both inaccurate** — over- or under-covering, missing faint dust
+  films, or latching onto background on wide scenes. The clear way forward is to
+  **fine-tune the segmentation model on more annotations** — additional hand-drawn
+  dust masks in the project's `image → binary mask` format. The blocker is not the
+  method but the **labelling effort**: pixel-accurate masks for a large number of
+  images is significant dedicated work, which is why it is future work rather than
+  done here.
+
 - **Track A's soiling index is unsupervised and approximate** (relative desaturation,
   not calibrated coverage); for trustworthy numbers use the Track B power-loss model.
 
