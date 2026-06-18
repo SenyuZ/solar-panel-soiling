@@ -15,6 +15,12 @@ present, how much of the surface is affected, and where.
 | Models | ResNet-50 classifier · classical SVM/RF baseline · ResNet-34 U-Net segmenter |
 | Result | 0.821 F1 in-domain, 0.952 F1 on a leak-free external OOD set, +11 F1 over the best classical baseline |
 
+The binary classifier trains on 2,320 curated images (1,305 clean / 1,015 dirty) pooled from
+three public sources and de-duplicated, with 186 watermarked images removed because they
+were inflating the benchmark. Generalisation is measured on a separate, leak-free external
+set (2,485 panel-filling photos, zero overlap with training). Full sources, counts and
+licences are in [`DATASET.md`](DATASET.md).
+
 It started as a University of Technology Sydney (UTS) Image Processing & Pattern
 Recognition group project (binary clean/dirty classification) and has since been rebuilt
 into a reproducible package and extended along several axes: multi-class classification, a
@@ -169,7 +175,7 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 - Explainability. Grad-CAM over the last conv block shows where the model sees
   soiling/faults.
 
-## Limitations & caveats
+## Limitations & failure analysis
 
 - The binary model still partly exploits background context (shortcut learning). Grad-CAM
   shows that on whole-scene, wide-angle Dust-Detection photos the clean/dirty classifier
