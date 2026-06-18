@@ -1,8 +1,20 @@
 # Solar Panel Soiling & Fault Analysis
 
+[![tests](https://github.com/SenyuZ/solar-panel-soiling/actions/workflows/ci.yml/badge.svg)](https://github.com/SenyuZ/solar-panel-soiling/actions/workflows/ci.yml)
+
 Computer-vision toolkit for assessing the condition of photovoltaic (solar) panels from
 ordinary photos: whether a panel is clean or dirty, what kind of soiling or fault is
 present, how much of the surface is affected, and where.
+
+**[▶ Try it live (no install)](https://huggingface.co/spaces/SenyuZ/solar-panel-soiling)**  ·  binary + 6-class  ·  classical baseline  ·  severity + segmentation  ·  Grad-CAM
+
+| | |
+|---|---|
+| Task | clean/dirty + 6-class soiling/fault classification, severity, and dust segmentation |
+| Data | curated multi-source (Kaggle + SolNet); external OOD test (Roboflow); DeepSolarEye (severity) |
+| Models | ResNet-50 classifier · classical SVM/RF baseline · ResNet-34 U-Net segmenter |
+| Result | 0.821 F1 in-domain, 0.952 F1 on a leak-free external OOD set, +11 F1 over the best classical baseline |
+| Demo | [solar-panel-soiling on Hugging Face Spaces](https://huggingface.co/spaces/SenyuZ/solar-panel-soiling) · no install |
 
 It started as a University of Technology Sydney (UTS) Image Processing & Pattern
 Recognition group project (binary clean/dirty classification) and has since been rebuilt
