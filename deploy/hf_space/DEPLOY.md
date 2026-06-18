@@ -6,7 +6,7 @@ installed from GitHub; only the model weights need to be added by hand (they are
 not in the GitHub repo).
 
 A Space is its own git repo, separate from the GitHub repo. You create it under
-your own Hugging Face account — that step can't be automated from here (no HF
+your own Hugging Face account; that step can't be automated from here (no HF
 token on this machine).
 
 ## Files in this bundle (go at the Space root)
@@ -18,7 +18,7 @@ token on this machine).
 | `packages.txt` | apt packages OpenCV needs (`libgl1`, `libglib2.0-0`) |
 | `README.md` | the Space "card" (title, SDK, version metadata) |
 
-You also upload **three weight files**, which live locally at:
+You also upload three weight files, which live locally at:
 
 ```
 artifacts/binary/model.pth        (~90 MB) -> Space path: artifacts/binary/model.pth
@@ -27,13 +27,13 @@ artifacts/segmentation/model.pth  (~93 MB) -> Space path: artifacts/segmentation
 ```
 
 The segmentation weight powers the ML "U-Net dust segmentation" panel shown next
-to the classical overlay. It's optional — without it the demo just hides that
-panel — but it's what lets reviewers compare the classical vs ML approach.
+to the classical overlay. It is optional (without it the demo just hides that
+panel), but it is what lets reviewers compare the classical and ML approaches.
 
 > These weights become publicly downloadable on the Space. That's expected for a
 > public demo.
 
-## Option A — web UI (no CLI, easiest)
+## Option A: web UI (no CLI, easiest)
 
 1. Sign in at https://huggingface.co and click **New** -> **Space**.
 2. Owner = your account; Space name e.g. `solar-panel-soiling`; SDK = **Gradio**;
@@ -48,7 +48,7 @@ panel — but it's what lets reviewers compare the classical vs ML approach.
 5. The Space rebuilds on each change; watch the **Logs** tab. First build is
    ~5–10 min (it installs torch). When it says *Running*, open the **App** tab.
 
-## Option B — git CLI
+## Option B: git CLI
 
 ```bash
 # 1. Create the Space on the website first (as above), then clone it:
@@ -78,7 +78,7 @@ and replace the placeholder in the main repo `README.md` ("Try it live" line).
 
 ## Notes
 
-- **The `emoji:` field in `README.md` is required by Hugging Face** for the Space
+- The `emoji:` field in `README.md` is required by Hugging Face for the Space
   thumbnail; it is not shown inside the app. Change it in the Space card / Settings
   if you prefer a different one.
 - If the build fails on `torch==2.12.0` / `torchvision==0.27.0` (wheel not found
