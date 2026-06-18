@@ -11,7 +11,7 @@ Two complementary tracks, matching the plan:
   continuous **soiling index** (the headline number), an approximate coverage,
   a severity bucket, and an illustrative power-loss estimate.
 
-  Honest limitation: clean and dusty panels overlap a lot in low-level statistics
+  Limitation: clean and dusty panels overlap a lot in low-level statistics
   (precisely why a CNN is worthwhile), so Track A is best read as a *relative*
   index and a *localisation* aid, not a calibrated coverage percentage.
 

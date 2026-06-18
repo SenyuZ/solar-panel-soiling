@@ -24,7 +24,7 @@ Drop a photo of a photovoltaic panel and get:
 Runs on a free CPU Space, so the first request after the Space wakes from sleep takes a
 few seconds. Inference is then about 1–2 s per image.
 
-Source code, methodology, datasets, and honest limitations:
+Source code, methodology, datasets, and limitations:
 https://github.com/SenyuZ/solar-panel-soiling
 
 > The model attends to image background in some wide, scene-heavy shots (a known shortcut

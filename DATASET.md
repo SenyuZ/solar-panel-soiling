@@ -38,7 +38,7 @@ of `manifests/binary_manifest.csv`:
 > across the three sources. This lack of standardisation is a known contributor to the
 > wide-scene failures documented in the README's Limitations. A further round of cleaning,
 > sorting and standardising the set, with tighter framing and dropping off-distribution and
-> duplicate images, is future work that should improve both training and the honesty of the
+> duplicate images, is future work that should improve both training and the reliability of the
 > in-domain benchmark.
 
 > Reproducibility and redistribution. Images are not redistributed. De-duplication is

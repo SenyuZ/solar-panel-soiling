@@ -158,11 +158,11 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
 - Explainability. Grad-CAM over the last conv block shows where the model sees
   soiling/faults.
 
-## Limitations & honest caveats
+## Limitations & caveats
 
 - The binary model still partly exploits background context (shortcut learning). Grad-CAM
   shows that on whole-scene, wide-angle Dust-Detection photos the clean/dirty classifier
-  often attends to the surroundings (buildings, sky, people) rather than the panel. An OCR
+  often attends to the surroundings (buildings, sky, people) instead of the panel. An OCR
   audit (`scripts/triage_suspects.py`) also found 186 images (about 7%) carrying tiled
   stock-photo watermarks (Shutterstock/Dreamstime), another spurious cue, which were removed
   along with near-duplicates (see DATASET.md). Tellingly, removing the watermarks lowered
@@ -174,10 +174,10 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   and camera ([Roboflow "solar panel dirt det"](https://universe.roboflow.com/alex-jcvyb/solar-panel-dirt-det),
   CC BY 4.0; zero perceptual-hash overlap with training, see `DATASET.md`), the model scores
   0.952 F1, 0.912 macro-F1, MCC 0.835, which is higher than on its own (now watermark-free,
-  harder) in-domain test, and essentially unchanged by the cleanup. These images are
+  harder) in-domain test, and barely changed by the cleanup. These images are
   panel-filling with almost no background, so the shortcut cannot help: the strong score
-  shows the model has genuinely learned real dust/panel features, and the background
-  reliance is a wide-scene artefact rather than a crutch it depends on. (This is a true
+  shows the model has learned real dust/panel features, and the background reliance is a
+  wide-scene artefact the model does not actually rely on. (This is a true
   out-of-distribution test, replacing an earlier within-Kaggle pythonafroz cross-check;
   pythonafroz is now part of training.) The multi-class model (tight panel crops) doesn't
   show the shortcut at all.
@@ -193,7 +193,7 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   photos, where the panel occupies a small fraction of the frame. Both the attention map and
   the unsupervised desaturation then latch onto whatever dominates the image, which is
   background. The tight-crop multi-class images (above) don't show this at all. A related,
-  milder point: on a genuinely clean panel there is no dirt to localize, so a "find the dirt"
+  milder point: on a clean panel there is no dirt to localize, so a "find the dirt"
   heatmap or coverage map is ill-posed and will point somewhere arbitrary.
 
   Mitigation (future work), and why standardised data matters. The fix is to detect and crop
@@ -202,7 +202,7 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   overlays meaningful, and would need a panel detector or segmentation head (real work, hence
   future). More broadly, the failures here are a data-quality story as much as a modelling
   one: the tight-crop pythonafroz and multi-class sets, where every image is standardised to
-  a single centred panel, give clean attention and honest coverage, while the uncurated
+  a single centred panel, give clean attention and reliable coverage, while the uncurated
   wide-angle photos do not, even after curation. Consistent framing, scale, and subject
   isolation at capture time are worth more than extra model capacity; a detector/crop step is
   really a way to impose that standardisation after the fact.
@@ -219,15 +219,15 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   blobby, multi-region maps but remain bounded by the conv resolution.
 
 - Locating the dirt is still approximate, for both methods, and they disagree. The demo
-  deliberately shows the classical Track-A soiling overlay and the U-Net dust segmentation
-  side by side, because neither is optimal. The classical overlay keys on desaturation (an
+  shows the classical Track-A soiling overlay and the U-Net dust segmentation side by side,
+  because neither is optimal. The classical overlay keys on desaturation (an
   unsupervised heuristic); the U-Net was trained on about 1,600 masks and reaches only test
   Dice 0.47 / IoU 0.38. In many images the two disagree and are both inaccurate, over- or
   under-covering, missing faint dust films, or latching onto background on wide scenes. The
   clear way forward is to fine-tune the segmentation model on more annotations, additional
   hand-drawn dust masks in the project's `image → binary mask` format. The blocker is not the
   method but the labelling effort: pixel-accurate masks for a large number of images is
-  significant dedicated work, which is why it is future work rather than done here.
+  significant dedicated work, which is why it remains future work.
 
 - Track A's soiling index is unsupervised and approximate (relative desaturation, not
   calibrated coverage); for trustworthy numbers use the Track B power-loss model.

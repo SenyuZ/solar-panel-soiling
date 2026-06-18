@@ -20,12 +20,12 @@ context. Extension rows need their datasets, see `DATASET.md`.
 Per-class (cleaned curated ResNet-50): clean P/R/F1 = 0.843 / 0.903 / 0.872 · dirty = 0.862
 / 0.783 / 0.821. Training early-stopped at epoch 12.
 
-Reading the table: this is a data-quality story with an honest twist. Pooling three sources
+Reading the table: this is a data-quality story with a twist. Pooling three sources
 into a curated set first showed 0.880 F1, but an OCR audit (`scripts/triage_suspects.py`)
 found 186 images (about 7%) carrying tiled stock-photo watermarks (Shutterstock/Dreamstime),
 a spurious cue. Removing the watermarks (plus 65 near-duplicates) lowered the in-domain F1 to
 0.821: those easy, watermarked images had been inflating the benchmark. So the headline
-in-domain number is now back near the raw-set level (0.811), but that is the honest, harder
+in-domain number is now back near the raw-set level (0.811), but that is the harder, fairer
 number, and the real test is generalisation, where this model is strong (0.952 OOD F1,
 below). The leak-free, directly comparable signal is the deep-vs-classical gap on the cleaned
 split: ResNet-50's 0.821 F1 against the best classical 0.712 (SVM), so learned features still
@@ -58,11 +58,11 @@ found 0 / 2,485 near-duplicates against the training data, so this is leak-free.
 Per-class OOD: clean P/R = 0.787 / 0.980 · dirty P/R = 0.993 / 0.914.
 
 Why this matters: the model scores much higher OOD than in-domain, on images that are
-panel-filling with almost no background, exactly the regime where the background-shortcut
+panel-filling with almost no background, which is the regime where the background-shortcut
 (README Limitations) cannot help. This is direct evidence the model learned real dust/panel
 features and generalises across sources; the background reliance is a wide-scene artefact,
 not a crutch. Notably, removing the in-domain watermarks dropped the in-domain F1 (0.880 →
-0.821) but left OOD essentially unchanged (0.955 → 0.952), confirming the watermarks were
+0.821) but left OOD barely changed (0.955 → 0.952), confirming the watermarks were
 inflating the in-domain number, not the model's real ability. This OOD test replaces an
 earlier within-Kaggle pythonafroz cross-check (that source is now part of training).
 
@@ -98,7 +98,7 @@ python -m solarsoil.evaluate   --model artifacts/multiclass/model.pth --manifest
 
 * Track A (classical, runs now): the saturation-based soiling index orders dusty above clean
   on average (sampled panels: clean ≈ 0.10–0.32, dusty ≈ 0.21–0.47). Absolute coverage is
-  approximate, since clean and dusty overlap in low-level cues, which is exactly why the CNN
+  approximate, since clean and dusty overlap in low-level cues, which is why the CNN
   is worthwhile. Track A is best used as a relative index + localisation aid (red overlay
   below).
 * Track B (DeepSolarEye, real run): a 1-output CNN regressor (MSE) trained on the measured %
@@ -127,10 +127,10 @@ python -m solarsoil.severity --image Data/Dusty --limit 25 --out-dir reports/fig
 A U-Net with an ImageNet-pretrained ResNet-34 encoder, trained on 1,279 image/dust-mask pairs
 (val 160, test 160), turns Track A's approximate index into a measured dust coverage % and a
 pixel mask. Test Dice 0.47 · IoU 0.38, where the pretrained encoder lifts a from-scratch
-U-Net's 0.38 / 0.30. Dust segmentation is genuinely hard (diffuse, fuzzy boundaries plus
+U-Net's 0.38 / 0.30. Dust segmentation is hard (diffuse, fuzzy boundaries plus
 noisy pseudo-labels cap it), but the estimate is now well-localised: a clean panel reads
 0.0%, the dusty example 12.8% (truth 16.6%; the from-scratch net over-predicted about 28%),
-and the mask traces the soiled *left* side rather than a crude top band. More epochs or
+and the mask traces the soiled *left* side instead of a crude top band. More epochs or
 cleaner human labels would push it further.
 
 ![Predicted dust mask (measured coverage)](figures/segmentation/Imgdirty_0_1_dustseg.png)
