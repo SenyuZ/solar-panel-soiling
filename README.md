@@ -14,7 +14,6 @@ present, how much of the surface is affected, and where.
 | Data | curated multi-source (Kaggle + SolNet); external OOD test (Roboflow); DeepSolarEye (severity) |
 | Models | ResNet-50 classifier · classical SVM/RF baseline · ResNet-34 U-Net segmenter |
 | Result | 0.821 F1 in-domain, 0.952 F1 on a leak-free external OOD set, +11 F1 over the best classical baseline |
-| Demo | [solar-panel-soiling on Hugging Face Spaces](https://huggingface.co/spaces/SenyuZ/solar-panel-soiling) · no install |
 
 It started as a University of Technology Sydney (UTS) Image Processing & Pattern
 Recognition group project (binary clean/dirty classification) and has since been rebuilt
