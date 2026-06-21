@@ -68,6 +68,13 @@ the in-domain number alone suggests. Multi-class (6 classes): macro-F1 0.857, wi
 fault classes held up by class weighting; 3-way clean/soiled/damaged: macro-F1 0.883. Full
 tables and the deep-vs-classical discussion are in [`reports/results.md`](reports/results.md).
 
+The 6-class model classifies the fault type directly — one held-out example per class, with
+the model's predicted label and confidence:
+
+![6-class predictions: clean, dusty, bird-drop, snow, physical and electrical damage](reports/figures/multiclass_examples.png)
+
+(Macro-F1 0.857 across the six classes; full numbers in [`reports/results.md`](reports/results.md).)
+
 | Grad-CAM, *where the model looks* (multi-class, physical damage) | Soiling coverage, *how much surface is dirty* (classical, Track A) |
 |---|---|
 | ![Grad-CAM](reports/figures/multiclass_physical_gradcam.png) | ![Soiling](reports/figures/coverage/Imgdirty_0_1_soiling.png) |
