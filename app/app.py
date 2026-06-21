@@ -22,7 +22,14 @@ any training.
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
+
+# Gradio 6 enables server-side rendering (a Node proxy in front of Python) by default,
+# which makes the app hang at "Starting" on Hugging Face Spaces (HF health-checks port
+# 7860 but SSR puts the Python server on 7861). Disable it before gradio is imported so
+# the Gradio server binds 7860 directly and HF detects it as Running.
+os.environ.setdefault("GRADIO_SSR_MODE", "false")
 
 import gradio as gr
 from PIL import Image
@@ -243,7 +250,7 @@ def main(argv: list[str] | None = None) -> None:
     # The model path is read lazily on the first analysis, so just record it and launch.
     if args.model:
         STATE["_model_path"] = args.model
-    demo.launch(share=args.share, server_port=args.port)
+    demo.launch(share=args.share, server_port=args.port, ssr_mode=False)
 
 
 if __name__ == "__main__":
