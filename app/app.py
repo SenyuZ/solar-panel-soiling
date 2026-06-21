@@ -207,6 +207,13 @@ def build_demo() -> gr.Blocks:
     return demo
 
 
+# Hugging Face Spaces imports this file and serves the top-level `demo`. Exposing it
+# here (instead of only launching under __main__) avoids HF's fallback launch path,
+# which spins up a second event loop and prints a harmless asyncio cleanup traceback.
+# build_demo() auto-detects a model under artifacts/; override locally with --model.
+demo = build_demo()
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description="Launch the solar-panel soiling demo.")
     ap.add_argument("--model", default=None, help="Path to a model.pth bundle.")
@@ -214,8 +221,13 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--port", type=int, default=7860)
     args = ap.parse_args(argv)
 
-    STATE["_model_path"] = args.model
-    build_demo().launch(share=args.share, server_port=args.port)
+    # Reuse the module-level demo unless a specific model was requested on the CLI.
+    if args.model:
+        STATE["_model_path"] = args.model
+        app = build_demo()
+    else:
+        app = demo
+    app.launch(share=args.share, server_port=args.port)
 
 
 if __name__ == "__main__":
