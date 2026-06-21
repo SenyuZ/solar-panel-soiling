@@ -100,7 +100,7 @@ MCC 0.835, see `reports/results.md`.
 
 | Purpose | Dataset | Access | Notes |
 |---|---|---|---|
-| Dust segmentation → measured coverage | Solar Panel Dust Segmentation, 1,604 image + binary dust-mask pairs (0=background, 1=dust) | `download --source dust_seg` | Created by Team 7 (Zhengda Peng): CVAT-labelled supervised masks + filtered pseudo-labels over the curated panel images. Used here to train the U-Net soiling segmenter. |
+| Dust segmentation (exploratory) | Solar Panel Dust Segmentation, 1,604 image + binary dust-mask pairs (0=background, 1=dust) | `download --source dust_seg` | Third-party set (Team 7 / Zhengda Peng, Kaggle): CVAT masks + filtered pseudo-labels. On inspection the labels are inconsistent — many mark background, sky, or watermark text rather than soiling — so the U-Net segmentation is kept exploratory; reliable results would need hand-drawn masks (see the README limitations). |
 
 ## Citations
 

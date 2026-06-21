@@ -122,18 +122,19 @@ python -m solarsoil.models.regression train --manifest manifests/deepsolareye_ma
 python -m solarsoil.severity --image Data/Dusty --limit 25 --out-dir reports/figures/coverage
 ```
 
-## Soiling segmentation, measured coverage (U-Net)
+## Soiling segmentation (exploratory / future work)
 
-A U-Net with an ImageNet-pretrained ResNet-34 encoder, trained on 1,279 image/dust-mask pairs
-(val 160, test 160), turns Track A's approximate index into a measured dust coverage % and a
-pixel mask. Test Dice 0.47 · IoU 0.38, where the pretrained encoder lifts a from-scratch
-U-Net's 0.38 / 0.30. Dust segmentation is hard (diffuse, fuzzy boundaries plus
-noisy pseudo-labels cap it), but the estimate is now well-localised: a clean panel reads
-0.0%, the dusty example 12.8% (truth 16.6%; the from-scratch net over-predicted about 28%),
-and the mask traces the soiled *left* side instead of a crude top band. More epochs or
-cleaner human labels would push it further.
+I built a U-Net with an ImageNet-pretrained ResNet-34 encoder and trained it (1,279 / 160 / 160
+split) on the third-party dust-segmentation dataset, to segment dust directly instead of via
+the classical desaturation heuristic. I am not reporting it as a validated result: inspecting
+the dataset showed the masks are inconsistent — many label background, sky, or watermark text
+rather than soiling — so there is no trustworthy ground truth. The model was supervised on
+those masks, so it reproduces their errors, and any score against them (it reaches test Dice
+0.47 / IoU 0.38 on the same noisy labels) is not meaningful. The fix is hand-drawn pixel masks
+in the `image → binary mask` format, then retraining; that labelling is the real,
+time-consuming blocker. The overlay below is kept as a qualitative illustration only.
 
-![Predicted dust mask (measured coverage)](figures/segmentation/Imgdirty_0_1_dustseg.png)
+![U-Net dust overlay (exploratory)](figures/segmentation/Imgdirty_0_1_dustseg.png)
 
 ```bash
 python -m solarsoil.data.download --source dust_seg

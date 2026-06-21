@@ -6,13 +6,13 @@ Computer-vision toolkit for assessing the condition of photovoltaic (solar) pane
 ordinary photos: whether a panel is clean or dirty, what kind of soiling or fault is
 present, how much of the surface is affected, and where.
 
-**[▶ Try it live (no install)](https://huggingface.co/spaces/SenyuZ/solar-panel-soiling)**  ·  binary + 6-class  ·  classical baseline  ·  severity + segmentation  ·  Grad-CAM
+**[▶ Try it live (no install)](https://huggingface.co/spaces/SenyuZ/solar-panel-soiling)**  ·  binary + 6-class  ·  classical baseline  ·  severity  ·  Grad-CAM
 
 | | |
 |---|---|
 | Task | clean/dirty + 6-class soiling/fault classification, severity, and dust segmentation |
 | Data | curated multi-source (Kaggle + SolNet); external OOD test (Roboflow); DeepSolarEye (severity) |
-| Models | ResNet-50 classifier · classical SVM/RF baseline · ResNet-34 U-Net segmenter |
+| Models | ResNet-50 classifier · classical SVM/RF baseline · ResNet-34 U-Net segmenter (exploratory) |
 | Result | 0.821 F1 in-domain, 0.952 F1 on a leak-free external OOD set, +11 F1 over the best classical baseline |
 
 The binary classifier trains on 2,320 curated images (1,305 clean / 1,015 dirty) pooled from
@@ -51,7 +51,7 @@ the same demo locally: `python app/app.py`.
 | Multi-class (hierarchical) | clean / soiled {dust, bird-drop, snow} / damaged {physical, electrical} | `solarsoil.taxonomy` + configs |
 | Classical IP baseline | HSV colour + GLCM/LBP texture + edge features → SVM/RF, benchmarked against the CNN | `features.classical` / `models.classical` |
 | Severity / coverage | classical soiling index + coverage map (Track A); DeepSolarEye power-loss CNN regression (Track B) | `severity` · `models.regression` |
-| Soiling segmentation | ResNet-34 U-Net (pretrained encoder) → measured dust coverage % + pixel mask | `models.segmentation` |
+| Soiling segmentation (exploratory) | ResNet-34 U-Net (pretrained encoder); the only available dust masks were third-party and too inconsistent to validate — kept as future work | `models.segmentation` |
 | Explainability | from-scratch Grad-CAM heatmaps (also the weak-localisation signal for severity) | `explain.gradcam` |
 | Interactive demo | drop a photo → prediction + Grad-CAM + classical soiling overlay vs U-Net segmentation (side by side) + measured power-loss (Track B) | `app/app.py` |
 
@@ -77,10 +77,14 @@ tables and the deep-vs-classical discussion are in [`reports/results.md`](report
 > surface is dirty?"). A Grad-CAM blob is not a dirt map, and on the binary model it
 > sometimes lands on the background (see Limitations below).
 
-A ResNet-34 U-Net (ImageNet-pretrained encoder) measures dust coverage directly: a clean
-panel reads 0%, this dusty one 12.8% (truth 17%; test Dice 0.47):
+I also built a ResNet-34 U-Net (ImageNet-pretrained encoder) to segment dust directly. I keep
+it as exploratory / future work, not a headline result: the only dust-mask labels I could find
+were a third-party set, and on inspection they are inconsistent — many mark background, sky, or
+even watermark text rather than soiling, so there is no trustworthy ground truth to train or
+score against. The overlay below is a qualitative illustration only; see
+[Limitations](#limitations--failure-analysis).
 
-![Measured dust segmentation](reports/figures/segmentation/Imgdirty_0_1_dustseg.png)
+![U-Net dust segmentation (exploratory)](reports/figures/segmentation/Imgdirty_0_1_dustseg.png)
 
 ## Repository layout
 
@@ -235,16 +239,15 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   tools for the job. Sharper CAM variants (Grad-CAM++, Score-CAM, LayerCAM) would give less
   blobby, multi-region maps but remain bounded by the conv resolution.
 
-- Locating the dirt is still approximate, for both methods, and they disagree. The demo
-  shows the classical Track-A soiling overlay and the U-Net dust segmentation side by side,
-  because neither is optimal. The classical overlay keys on desaturation (an
-  unsupervised heuristic); the U-Net was trained on about 1,600 masks and reaches only test
-  Dice 0.47 / IoU 0.38. In many images the two disagree and are both inaccurate, over- or
-  under-covering, missing faint dust films, or latching onto background on wide scenes. The
-  clear way forward is to fine-tune the segmentation model on more annotations, additional
-  hand-drawn dust masks in the project's `image → binary mask` format. The blocker is not the
-  method but the labelling effort: pixel-accurate masks for a large number of images is
-  significant dedicated work, which is why it remains future work.
+- Dust segmentation is exploratory, held back by label quality. I built a ResNet-34 U-Net to
+  segment dust directly, but the only labels available were a third-party set (the Kaggle
+  dust-segmentation dataset) that, on inspection, are inconsistent — a large share mark
+  background, sky, people, or watermark text rather than soiling. The U-Net was trained on
+  those masks, so it inherits their errors, and any score against them (it reaches test Dice
+  0.47 / IoU 0.38 on the same labels) is not meaningful. Doing this properly means drawing our
+  own pixel-accurate masks in the `image → binary mask` format and retraining — significant
+  dedicated labelling work, which is why it stays future work. The classical Track-A soiling
+  overlay (unsupervised, needs no labels) is the usable estimate in the meantime.
 
 - Track A's soiling index is unsupervised and approximate (relative desaturation, not
   calibrated coverage); for trustworthy numbers use the Track B power-loss model.

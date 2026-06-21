@@ -135,8 +135,9 @@ def analyze(image: Image.Image):
         prob = predict_dust(seg, STATE["seg_bundle"], image, STATE["device"])
         seg_overlay = overlay_dust(image, prob)
         seg_line = (
-            f"**U-Net dust coverage ≈ {coverage_from_prob(prob) * 100:.1f}%** "
-            f"_(ResNet-34 U-Net, supervised ML segmentation; test Dice 0.47)_"
+            "_U-Net dust overlay (exploratory): trained on inconsistent third-party "
+            "labels, so it is shown for visual comparison only, not a validated "
+            "measurement (see the repo's limitations)._"
         )
 
     # --- Power loss: prefer the measured Track B regressor, else classical ---
