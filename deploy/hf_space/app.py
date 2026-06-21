@@ -30,7 +30,8 @@ from solarsoil.utils import get_device
 # Populated by load_model(); kept module-global so the UI callback can use it.
 STATE: dict = {"model": None, "bundle": None, "regressor": None,
                "reg_bundle": None, "segmenter": None, "seg_bundle": None,
-               "device": get_device()}
+               "device": get_device(), "_model_path": None,
+               "_loaded": {"model": False, "regressor": False, "segmenter": False}}
 
 _CANDIDATE_MODELS = [
     "artifacts/condition/model.pth",
@@ -90,10 +91,26 @@ def load_segmenter_into_state() -> None:
         STATE["segmenter"], STATE["seg_bundle"] = None, None
 
 
+def ensure_models() -> None:
+    """Load models on first use and cache them, so the UI starts instantly instead
+    of loading ~226 MB of checkpoints before the page is even served."""
+    if not STATE["_loaded"]["model"]:
+        load_model(STATE.get("_model_path"))
+        STATE["_loaded"]["model"] = True
+    if not STATE["_loaded"]["regressor"]:
+        load_regressor_into_state()
+        STATE["_loaded"]["regressor"] = True
+    if not STATE["_loaded"]["segmenter"]:
+        load_segmenter_into_state()
+        STATE["_loaded"]["segmenter"] = True
+
+
 def analyze(image: Image.Image):
     """Run the full pipeline on one PIL image for the Gradio callback."""
     if image is None:
         return {}, None, None, None, "Upload a solar-panel image to begin."
+
+    ensure_models()  # lazy: load checkpoints on first use, then cached
 
     # --- Classical soiling estimate (always available) ---
     soil = estimate_soiling(image)
@@ -180,9 +197,10 @@ def build_demo() -> gr.Blocks:
             "explanation, plus two takes on *where* the dirt is — a **classical** "
             "image-processing estimate and a **U-Net** ML segmentation — side by side."
         )
-        status = gr.Markdown(load_model(STATE.get("_model_path")))
-        load_regressor_into_state()
-        load_segmenter_into_state()
+        gr.Markdown(
+            "_Models load on the first analysis (a few seconds on the free CPU "
+            "tier), then it's fast._"
+        )
         with gr.Row():
             with gr.Column():
                 inp = gr.Image(type="pil", label="Solar panel image")
@@ -201,10 +219,10 @@ def build_demo() -> gr.Blocks:
     return demo
 
 
-# Hugging Face Spaces imports this file and serves the top-level `demo`. Exposing it
-# here (instead of only launching under __main__) avoids HF's fallback launch path,
-# which spins up a second event loop and prints a harmless asyncio cleanup traceback.
-# build_demo() auto-detects a model under artifacts/; override locally with --model.
+# Hugging Face Spaces imports this file and serves the top-level `demo`. Building it
+# is cheap now (models load lazily on first use), so the app reaches "Running" fast
+# instead of waiting on ~226 MB of checkpoints. Exposing `demo` also avoids HF's
+# fallback launch path (the source of the asyncio "Invalid file descriptor" noise).
 demo = build_demo()
 
 
@@ -215,13 +233,10 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--port", type=int, default=7860)
     args = ap.parse_args(argv)
 
-    # Reuse the module-level demo unless a specific model was requested on the CLI.
+    # The model path is read lazily on the first analysis, so just record it and launch.
     if args.model:
         STATE["_model_path"] = args.model
-        app = build_demo()
-    else:
-        app = demo
-    app.launch(share=args.share, server_port=args.port)
+    demo.launch(share=args.share, server_port=args.port)
 
 
 if __name__ == "__main__":
