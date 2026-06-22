@@ -15,15 +15,25 @@ token on this machine).
 |---|---|
 | `app.py` | Gradio entry point (copy of `app/app.py`) |
 | `requirements.txt` | torch/torchvision (CPU) + `solarsoil` from GitHub |
-| `packages.txt` | apt packages OpenCV needs (`libgl1`, `libglib2.0-0`) |
+| `packages.txt` | apt libs — optional now: `solarsoil` uses `opencv-python-headless`, so no `libgl1` is needed |
 | `README.md` | the Space "card" (title, SDK, version metadata) |
 
-You also upload three weight files, which live locally at:
+You also upload the model weights. Hugging Face's web uploader makes nested folders fiddly,
+so the **classifier** has two easy overrides — use whichever is convenient:
+
+- drop a single `model.pth` at the **Space root** (this is the highest-priority candidate), or
+- set a Space variable `SOLARSOIL_MODEL` to the checkpoint's path,
+- otherwise it falls back to the nested defaults `artifacts/condition|multiclass|binary/model.pth`.
+
+The classifier you supply decides what the demo predicts: `binary` (clean/dirty), `condition`
+(clean/soiled/damaged), or `multiclass` (6 fault types). The segmentation and severity models
+are separate and still live at their nested paths (they power the dust overlay and the
+power-loss line):
 
 ```
-artifacts/binary/model.pth        (~90 MB) -> Space path: artifacts/binary/model.pth
-artifacts/severity/model.pth      (~43 MB) -> Space path: artifacts/severity/model.pth
-artifacts/segmentation/model.pth  (~93 MB) -> Space path: artifacts/segmentation/model.pth
+classifier (pick one):  model.pth  at the Space root   — e.g. a copy of artifacts/multiclass/model.pth
+artifacts/severity/model.pth      (~43 MB)  -> Space path: artifacts/severity/model.pth
+artifacts/segmentation/model.pth  (~93 MB)  -> Space path: artifacts/segmentation/model.pth
 ```
 
 The segmentation weight powers the ML "U-Net dust segmentation" panel shown next
@@ -41,10 +51,11 @@ panel), but it is what lets reviewers compare the classical and ML approaches.
 3. In the Space's **Files** tab, **Add file -> Upload files** and upload
    `app.py`, `requirements.txt`, `packages.txt`, and `README.md` from this folder.
    (The uploaded `README.md` replaces the auto-generated one — that's correct.)
-4. Add the weights at the right paths: **Add file -> Upload files**, then in the
-   filename box type `artifacts/binary/model.pth` (creating the folders) and pick
-   the local `artifacts/binary/model.pth`. Repeat for
-   `artifacts/severity/model.pth`. Files this size go to LFS automatically.
+4. Add the weights. Easiest for the **classifier**: upload your chosen checkpoint
+   (e.g. `artifacts/multiclass/model.pth`) as **`model.pth` at the Space root** — no nested
+   folders. For **segmentation** and **severity**, use **Add file -> Upload files** and type
+   `artifacts/segmentation/model.pth` / `artifacts/severity/model.pth` in the filename box
+   (creating the folders). Files this size go to LFS automatically.
 5. The Space rebuilds on each change; watch the **Logs** tab. First build is
    ~5–10 min (it installs torch). When it says *Running*, open the **App** tab.
 
