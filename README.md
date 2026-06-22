@@ -256,6 +256,13 @@ See [`DATASET.md`](DATASET.md) for sources, licences and citations, and
   dedicated labelling work, which is why it stays future work. The classical Track-A soiling
   overlay (unsupervised, needs no labels) is the usable estimate in the meantime.
 
+- The soiling tools are dust-specific — even in the demo. The dust segmentation (U-Net) and
+  the power-loss regressor (Track B / DeepSolarEye) were both trained only on dust/soiling,
+  so they have no notion of cracks, burns, bird-drops or snow. The demo runs them on whatever
+  you upload, including the damage classes, but on a non-soiling fault they are out-of-domain:
+  the dust overlay and the power-loss number there are not meaningful and should be ignored.
+  They only carry information on dusty/soiled panels.
+
 - Track A's soiling index is unsupervised and approximate (relative desaturation, not
   calibrated coverage); for trustworthy numbers use the Track B power-loss model.
 

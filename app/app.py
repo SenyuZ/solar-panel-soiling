@@ -147,9 +147,9 @@ def analyze(image: Image.Image):
         prob = predict_dust(seg, STATE["seg_bundle"], image, STATE["device"])
         seg_overlay = overlay_dust(image, prob)
         seg_line = (
-            "_U-Net dust overlay (exploratory): trained on inconsistent third-party "
-            "labels, so it is shown for visual comparison only, not a validated "
-            "measurement (see the repo's limitations)._"
+            "_U-Net dust overlay (exploratory): trained only on (noisy, third-party) dust "
+            "labels, so it has no notion of cracks, burns, bird-drops or snow and is "
+            "meaningless on non-soiling faults. Shown for comparison only; see limitations._"
         )
 
     # --- Power loss: prefer the measured Track B regressor, else classical ---
@@ -159,9 +159,9 @@ def analyze(image: Image.Image):
 
         pl = predict_power_loss(reg, STATE["reg_bundle"], image, STATE["device"]) * 100
         power_line = (
-            f"**power loss ≈ {pl:.1f}%** _(DeepSolarEye regressor, test MAE 0.075; "
-            f"accurate on panel-filling photos — cross-domain & indicative on wide, "
-            f"background-heavy shots)_"
+            f"**power loss ≈ {pl:.1f}%** _(DeepSolarEye regressor, MAE 0.075 on soiling. "
+            f"Trained on soiling only, so it is not meaningful for cracks, burns or other "
+            f"faults, and is accurate only on panel-filling photos.)_"
         )
     else:
         power_line = (
