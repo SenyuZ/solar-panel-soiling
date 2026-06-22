@@ -46,7 +46,11 @@ STATE: dict = {"model": None, "bundle": None, "regressor": None,
                "device": get_device(), "_model_path": None,
                "_loaded": {"model": False, "regressor": False, "segmenter": False}}
 
+# Classifier auto-detect. On Hugging Face Spaces, nested upload paths are fiddly, so the
+# easiest overrides come first: a single `model.pth` at the app root, or the
+# SOLARSOIL_MODEL env var / Space variable pointing anywhere.
 _CANDIDATE_MODELS = [
+    "model.pth",                        # drop-in override at the app root (easy on HF Spaces)
     "artifacts/condition/model.pth",
     "artifacts/multiclass/model.pth",
     "artifacts/binary/model.pth",
@@ -64,7 +68,8 @@ _SEG_MODEL = "artifacts/segmentation/model.pth"
 def load_model(model_path: str | None) -> str:
     """Load a model bundle into STATE. Returns a human-readable status string."""
     if model_path is None:
-        model_path = next((p for p in _CANDIDATE_MODELS if Path(p).exists()), None)
+        model_path = os.environ.get("SOLARSOIL_MODEL") or next(
+            (p for p in _CANDIDATE_MODELS if Path(p).exists()), None)
     if model_path is None or not Path(model_path).exists():
         STATE["model"], STATE["bundle"] = None, None
         return "No trained model found — showing the classical soiling view only."
