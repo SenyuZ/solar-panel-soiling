@@ -84,8 +84,8 @@ git push        # prompts for your HF username + an access token (Settings -> Ac
 
 ## After it's live
 
-Copy the Space URL (`https://huggingface.co/spaces/<your-username>/solar-panel-soiling`)
-and replace the placeholder in the main repo `README.md` ("Try it live" line).
+The running Space lives at `https://huggingface.co/spaces/<your-username>/solar-panel-soiling`,
+which is where the project README's "Try it live" link points.
 
 ## Notes
 
